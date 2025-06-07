@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Page | ShoeVerse</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+  <style>
+    #copyToast { transition: opacity 0.3s ease-in-out; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+<!-- Header -->
+<header class="flex justify-between items-center px-6 md:px-10 py-4 bg-transparent shadow-md sticky top-0 z-50">
+  <!-- Logo -->
+  <a href="https://shoes.iyonicorp.com" class="flex items-center space-x-3">
+    <img src="https://i.imgur.com/dNrXMCe.png" alt="ShoeVerse Logo" class="w-14 h-14 md:w-20 md:h-20 object-contain" />
+  </a>
+
+  <!-- Navigation -->
+  <nav class="flex items-center space-x-6 text-base">
+    <a href="https://shoes.iyonicorp.com" class="text-gray-700 hover:text-indigo-600 transition font-medium">Home</a>
+
+    <!-- Cart Icon -->
+    <button id="cart-icon" class="relative text-xl hover:scale-110 transition">
+      🛒
+      <span id="cart-count" class="absolute -top-2 -right-3 bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">0</span>
+    </button>
+  </nav>
+
+  <!-- Cart Dropdown -->
+  <div id="cart-dropdown" class="absolute right-6 top-20 w-80 bg-white border rounded shadow-md hidden z-50">
+    <div class="flex justify-between items-center p-4 border-b">
+      <h3 class="text-lg font-semibold">Cart Items</h3>
+      <button onclick="closeCartDropdown()" class="text-gray-500 hover:text-red-600 text-xl font-bold">×</button>
+    </div>
+    <div class="p-4">
+      <div id="cart-items" class="space-y-3 max-h-52 overflow-y-auto"></div>
+      <button onclick="proceedToCheckout()" class="mt-4 w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Checkout</button>
+    </div>
+  </div>
+</header>
+<div id="signupPrompt" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+  <div class="bg-white p-6 rounded-lg shadow-lg w-[350px] text-center">
+    <h3 class="text-xl font-semibold mb-4">Please Sign Up or Log In</h3>
+    <p class="mb-4 text-gray-600">You need to be logged in to add products or place orders.</p>
+    <a href="../signup" class="inline-block bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700 transition">Go to Sign Up</a>
+    <button onclick="document.getElementById('signupPrompt').classList.add('hidden')" class="block text-sm text-gray-500 mt-4 hover:underline">Cancel</button>
+  </div>
+</div>
+
+<script>
+function showSignupPrompt() {
+  document.getElementById('signupPrompt').classList.remove('hidden');
+}
+</script>
+
+
+<!-- Product Section -->
+<section id="product-section" class="max-w-6xl mx-auto py-16 px-8"></section>
+
+<!-- Size Chart Modal -->
+<div id="sizeChartModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+  <div class="bg-white p-6 rounded-lg shadow-lg w-[400px]">
+    <h3 class="text-xl font-bold mb-4">Size Chart</h3>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left border border-gray-200">
+        <thead>
+          <tr class="bg-gray-100">
+            <th class="px-3 py-2 border">US</th>
+            <th class="px-3 py-2 border">UK</th>
+            <th class="px-3 py-2 border">EU</th>
+            <th class="px-3 py-2 border">AUS</th>
+          </tr>
+        </thead>
+        <tbody id="sizeChartBody" class="cursor-pointer"></tbody>
+      </table>
+    </div>
+    <button onclick="closeSizeChart()" class="bg-gray-700 text-white px-4 py-2 mt-4 w-full rounded">Close</button>
+  </div>
+</div>
+
+<!-- Swiper JS -->
+<link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const productId = urlParams.get("id");
+const products = JSON.parse(localStorage.getItem("shoeProducts") || "[]");
+const product = products.find(p => p.id === productId);
+
+let selectedSize = null;
+let selectedColor = null;
+let sizeChartType = "us";
+const fullSizeChart = [
+  { us: "5", uk: "3", eu: "35-36", aus: "5" },
+  { us: "5.5", uk: "3.5", eu: "36", aus: "5.5" },
+  { us: "6", uk: "4", eu: "36-37", aus: "6" },
+  { us: "6.5", uk: "4.5", eu: "37", aus: "6.5" },
+  { us: "7", uk: "5", eu: "37-38", aus: "7" },
+  { us: "7.5", uk: "5.5", eu: "38", aus: "7.5" },
+  { us: "8", uk: "6", eu: "38-39", aus: "8" },
+  { us: "8.5", uk: "6.5", eu: "39", aus: "8.5" },
+  { us: "9", uk: "7", eu: "39-40", aus: "9" },
+  { us: "10", uk: "7.5", eu: "40-41", aus: "10" },
+  { us: "11", uk: "8", eu: "41-42", aus: "11" }
+];
+
+function renderSizeChart() {
+  const body = document.getElementById("sizeChartBody");
+  body.innerHTML = "";
+  fullSizeChart.forEach(row => {
+    const tr = document.createElement("tr");
+    tr.className = "hover:bg-indigo-100 transition";
+    tr.onclick = () => {
+      const selected = row[sizeChartType];
+      selectedSize = selected;
+      closeSizeChart();
+      updateSizeButtons(selected);
+    };
+    tr.innerHTML = `
+      <td class="px-3 py-2 border">${row.us}</td>
+      <td class="px-3 py-2 border">${row.uk}</td>
+      <td class="px-3 py-2 border">${row.eu}</td>
+      <td class="px-3 py-2 border">${row.aus}</td>
+    `;
+    body.appendChild(tr);
+  });
+}
+function openSizeChart() {
+  document.getElementById("sizeChartModal").classList.remove("hidden");
+  renderSizeChart();
+}
+function closeSizeChart() {
+  document.getElementById("sizeChartModal").classList.add("hidden");
+}
+function switchSizeChart(type) {
+  sizeChartType = type;
+  document.querySelectorAll(".size-chart-btn").forEach(btn => {
+    btn.classList.remove("bg-indigo-600", "text-white");
+    btn.classList.add("bg-gray-200", "text-black");
+  });
+  document.querySelector(`.size-chart-btn:nth-child(${type === 'us' ? 1 : 2})`).classList.add("bg-indigo-600", "text-white");
+  renderSizeChart();
+}
+function updateSizeButtons(selected) {
+  document.querySelectorAll(".size-option").forEach(btn => {
+    if (btn.textContent === selected.toString()) {
+      btn.classList.add("bg-indigo-100", "border-indigo-500");
+    } else {
+      btn.classList.remove("bg-indigo-100", "border-indigo-500");
+    }
+  });
+}
+function selectColor(color, el) {
+  selectedColor = color;
+  document.querySelectorAll(".w-8.h-8").forEach(dot => dot.classList.remove("ring-2", "ring-indigo-500"));
+  el.classList.add("ring-2", "ring-indigo-500");
+}
+function selectSize(size, el) {
+  selectedSize = size;
+  document.querySelectorAll(".size-option").forEach(btn => btn.classList.remove("bg-indigo-100", "border-indigo-500"));
+  el.classList.add("bg-indigo-100", "border-indigo-500");
+}
+function addToCart() {
+  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  cart.push({ id: product.id, name: product.name, size: selectedSize, color: selectedColor, price: product.price });
+  localStorage.setItem("cart", JSON.stringify(cart));
+  alert("Product added to cart!");
+}
+function proceedToCheckout() {
+  alert(`Proceeding to checkout:\n${product.name} - Size ${selectedSize} - Color ${selectedColor}`);
+}
+function copyShareLink() {
+  const shareURL = window.location.href;
+  navigator.clipboard.writeText(shareURL).then(() => {
+    const toast = document.getElementById("copyToast");
+    toast.classList.remove("hidden");
+    setTimeout(() => toast.classList.add("hidden"), 2000);
+  });
+}
+
+
+renderProduct();
+function renderProduct() {
+  if (!product) {
+    document.getElementById("product-section").innerHTML = "<p class='text-center text-red-600'>Product not found.</p>";
+    return;
+  }
+
+  selectedSize = product.sizes[0];
+  selectedColor = product.colors[0];
+
+  const productDetailsHTML = product.details.map(detail => `<li>${detail}</li>`).join("");
+
+  document.getElementById("product-section").innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+      <div>
+        <!-- Swiper Main Image (no border or placeholder box) -->
+        <div class="swiper mySwiper2 mb-4 bg-transparent">
+          <div class="swiper-wrapper">
+            ${product.images.map(img => `
+              <div class="swiper-slide">
+                <img src="${img}" class="w-full object-contain" />
+              </div>
+            `).join("")}
+          </div>
+        </div>
+
+        <!-- Swiper Thumbnails -->
+        <div class="swiper mySwiperThumbs mt-2">
+          <div class="swiper-wrapper">
+            ${product.images.map(img => `
+              <div class="swiper-slide !w-auto">
+                <img src="${img}" class="h-20 w-28 object-contain rounded cursor-pointer" />
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      </div>
+
+      <!-- Product Details Area -->
+      <div class="space-y-6">
+        <h2 class="text-4xl font-bold">${product.name}</h2>
+        <p class="text-sm text-gray-400">Product ID: <span class="font-mono text-gray-700">${product.id}</span></p>
+        <p class="text-gray-600">${product.description}</p>
+        <p class="text-2xl font-semibold text-indigo-600">$${product.price}</p>
+
+        <div>
+          <label class="font-semibold block mb-1">Color</label>
+          <div class="flex gap-4">
+            ${product.colors.map((color, i) => {
+              const isSelected = i === 0 ? 'ring-2 ring-indigo-500' : '';
+              return `<span onclick="selectColor('${color}', this)" class="w-8 h-8 rounded-full bg-${color}-600 border-2 border-gray-300 cursor-pointer ${isSelected}"></span>`;
+            }).join("")}
+          </div>
+        </div>
+
+        <div>
+          <label class="font-semibold block mb-1 mt-4">Size 
+            <button onclick="openSizeChart()" class="text-sm text-blue-500 underline ml-2">View Chart</button>
+          </label>
+          <div class="grid grid-cols-4 gap-2">
+            ${product.sizes.map((size, i) => {
+              const isSelected = i === 0 ? 'bg-indigo-100 border-indigo-500' : '';
+              return `<button data-size="${size}" onclick="selectSize(${size}, this)" class="size-option py-2 border rounded ${isSelected}">${size}</button>`;
+            }).join("")}
+          </div>
+        </div>
+
+        <div class="space-x-4 pt-4">
+          <button onclick="addToCart()" class="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-500">Add to Cart</button>
+          <button onclick="buynow()" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-500">Buy now</button>
+        </div>
+
+        <div class="mt-4">
+          <button onclick="copyShareLink()" class="text-sm text-indigo-600 hover:underline">
+            🔗 Copy Share Link
+          </button>
+          <span id="copyToast" class="ml-3 text-green-600 text-sm hidden">Link copied!</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <section class="mt-12 max-w-4xl mx-auto">
+      <h3 class="text-2xl font-bold mb-4">Product Details</h3>
+      <ul class="list-disc list-inside space-y-2 text-gray-600">
+        ${productDetailsHTML}
+      </ul>
+    </section>
+
+<!-- Related Products -->
+<section class="mt-16 bg-transparent px-8 py-10 rounded shadow-md">
+  <h3 class="text-2xl font-bold mb-6">Related Products</h3>
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+    ${products.filter(p => p.id !== product.id && p.category === product.category).slice(0, 3).map(p => `
+      <div class="rounded-lg overflow-hidden shadow hover:shadow-md transition bg-transparent">
+        <a href="../product?id=${p.id}">
+          <img src="${p.images[0]}" alt="${p.name}" class="w-full h-52 object-contain"/>
+        </a>
+        <div class="p-4">
+          <h4 class="font-semibold">${p.name}</h4>
+          <p class="text-gray-600">$${p.price}</p>
+          <a href="../product?id=${p.id}" class="text-indigo-600 text-sm hover:underline">View Product</a>
+        </div>
+      </div>`).join('')}
+  </div>
+</section>
+  `;
+
+  initializeSwiper();
+}
+
+function updateMainImage(src) {
+  document.getElementById("mainImage").src = src;
+}
+
+function initializeSwiper() {
+  const thumbs = new Swiper(".mySwiperThumbs", {
+    spaceBetween: 10,
+    slidesPerView: 3,
+    freeMode: true,
+    watchSlidesProgress: true,
+  });
+
+  new Swiper(".mySwiper2", {
+    spaceBetween: 10,
+    thumbs: {
+      swiper: thumbs,
+    },
+  });
+}
+function getUserToken() {
+  return localStorage.getItem('token');
+}
+
+function isUserLoggedIn() {
+  return !!getUserToken();
+}
+function updateCartUI() {
+  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  const container = document.getElementById("cart-items");
+  const count = document.getElementById("cart-count");
+  container.innerHTML = "";
+
+  let total = 0;
+  count.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  cart.forEach((item, index) => {
+    const productImage = products.find(p => p.id === item.id)?.images[0] || '';
+    const subtotal = item.price * item.quantity;
+    total += subtotal;
+
+    const div = document.createElement('div');
+    div.className = 'flex items-start gap-3 border-b pb-3';
+
+    div.innerHTML = `
+      <img src="${productImage}" class="w-16 h-16 object-contain rounded" />
+      <div class="flex-1">
+        <p class="font-medium">${item.name}</p>
+        <p class="text-sm text-gray-500">Size: ${item.size}, Color: ${item.color}</p>
+        <p class="text-sm text-gray-700">$${item.price} × ${item.quantity} = <strong>$${subtotal.toFixed(2)}</strong></p>
+        <div class="flex items-center gap-2 mt-1">
+          <button onclick="changeQuantity(${index}, -1)" class="text-xs bg-gray-200 px-2 rounded">−</button>
+          <span>${item.quantity}</span>
+          <button onclick="changeQuantity(${index}, 1)" class="text-xs bg-gray-200 px-2 rounded">+</button>
+          <button onclick="removeCartItem(${index})" class="text-xs text-red-600 ml-auto">Remove</button>
+        </div>
+      </div>
+    `;
+
+    container.appendChild(div);
+  });
+
+  // Total section
+  const totalDiv = document.createElement('div');
+  totalDiv.className = 'pt-3 text-right font-semibold text-indigo-600';
+  totalDiv.innerText = `Total: $${total.toFixed(2)}`;
+  container.appendChild(totalDiv);
+}
+
+// Toggle dropdown
+document.getElementById('cart-icon').addEventListener('click', () => {
+  document.getElementById('cart-dropdown').classList.toggle('hidden');
+});
+
+updateCartUI();
+
+function addToCart() {
+  if (!isUserLoggedIn()) return showSignupPrompt();
+
+  let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  const existingIndex = cart.findIndex(item =>
+    item.id === product.id &&
+    item.size === selectedSize &&
+    item.color === selectedColor
+  );
+
+  if (existingIndex !== -1) {
+    cart[existingIndex].quantity += 1;
+  } else {
+    cart.push({
+      id: product.id,
+      name: product.name,
+      size: selectedSize,
+      color: selectedColor,
+      price: product.price,
+      quantity: 1
+    });
+  }
+
+  localStorage.setItem("cart", JSON.stringify(cart));
+  updateCartUI();
+
+  // 👉 Open the cart dropdown
+  document.getElementById('cart-dropdown').classList.remove('hidden');
+}
+
+function proceedToCheckout() {
+  if (!isUserLoggedIn()) return showSignupPrompt();
+
+  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  if (!cart.length) return alert("Your cart is empty.");
+
+  // ✅ Go to the checkout page
+  window.location.href = "../checkout";
+}
+
+
+function changeQuantity(index, delta) {
+  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  if (cart[index]) {
+    cart[index].quantity += delta;
+    if (cart[index].quantity <= 0) {
+      cart.splice(index, 1);
+    }
+    localStorage.setItem("cart", JSON.stringify(cart));
+    updateCartUI();
+  }
+}
+
+function removeCartItem(index) {
+  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  cart.splice(index, 1);
+  localStorage.setItem("cart", JSON.stringify(cart));
+  updateCartUI();
+}
+
+function closeCartDropdown() {
+  const dropdown = document.getElementById('cart-dropdown');
+  if (!dropdown.classList.contains('hidden')) {
+    dropdown.classList.add('hidden');
+  }
+}
+// Close cart dropdown on scroll
+window.addEventListener('scroll', () => {
+  closeCartDropdown();
+});
+
+
+
+function buynow() {
+  if (!isUserLoggedIn()) return showSignupPrompt();
+
+  if (!selectedSize || !selectedColor) {
+    return alert("Please select size and color before buying.");
+  }
+
+  const buyNowProduct = {
+    id: product.id,
+    name: product.name,
+    size: selectedSize,
+    color: selectedColor,
+    price: product.price,
+    quantity: 1,
+    image: product.images?.[0] || ''  // ✅ attach image
+  };
+
+  localStorage.setItem("buynowItem", JSON.stringify(buyNowProduct));
+  window.location.href = "../checkout";
+}
+
+</script>
+</body>
+</html>

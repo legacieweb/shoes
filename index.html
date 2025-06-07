@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ShoeVerse</title>
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/25/25694.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans">
+
+<style>
+  @keyframes fade-in {
+    0% { opacity: 0; transform: scale(0.95); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes slide-in-right {
+    0% { opacity: 0; transform: translateX(10px); }
+    100% { opacity: 1; transform: translateX(0); }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out forwards;
+  }
+
+  .animate-slide-in {
+    animation: slide-in-right 0.5s ease-out forwards;
+  }
+
+  @keyframes dropdown-fade {
+    0% { opacity: 0; transform: translateY(-10px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  .dropdown-animate {
+    animation: dropdown-fade 0.3s ease-out forwards;
+  }
+</style>
+
+<!-- Header -->
+<header class="flex justify-between items-center px-6 md:px-10 py-4 bg-transparent shadow-md sticky top-0 z-50">
+  <!-- Logo Section -->
+  <a href="https://shoes.iyonicorp.com" class="flex items-center space-x-3">
+    <img src="https://i.imgur.com/dNrXMCe.png" alt="ShoeVerse Logo" class="w-14 h-14 md:w-20 md:h-20 object-contain" />
+  </a>
+
+  <!-- Navigation Buttons -->
+  <nav class="flex items-center space-x-4 md:space-x-6">
+    <!-- Cart Icon -->
+    <button id="cart-icon" class="relative text-xl hover:scale-110 transition">
+      🛒
+      <span id="cart-count" class="absolute -top-2 -right-3 bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">0</span>
+    </button>
+
+    <!-- User Menu Icon -->
+    <button onclick="toggleUserMenu()" id="userMenuBtn" class="w-10 h-10 flex items-center justify-center rounded-full border hover:bg-gray-100 text-2xl transition">
+      👤
+    </button>
+  </nav>
+
+  <!-- Cart Dropdown -->
+  <div id="cart-dropdown" class="absolute right-6 top-20 w-80 bg-white border rounded shadow-lg hidden z-50">
+    <div class="flex justify-between items-center p-4 border-b">
+      <h3 class="text-lg font-semibold">Cart Items</h3>
+      <button onclick="closeCartDropdown()" class="text-gray-500 hover:text-red-600 text-xl font-bold">×</button>
+    </div>
+    <div class="p-4">
+      <div id="cart-items" class="space-y-3 max-h-52 overflow-y-auto"></div>
+      <button onclick="proceedToCheckout()" class="mt-4 w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Checkout</button>
+    </div>
+  </div>
+
+  <!-- User Menu Dropdown -->
+  <div id="userMenu" class="absolute right-6 top-20 w-48 bg-white border rounded shadow-md hidden z-50 dropdown-animate"></div>
+</header>
+<!-- Signup Prompt Modal -->
+<div id="signupPrompt" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+  <div class="bg-white p-6 rounded-lg shadow-lg w-[350px] text-center">
+    <h3 class="text-xl font-semibold mb-4">Please Sign Up or Log In</h3>
+    <p class="mb-4 text-gray-600">You need to be logged in to add products or place orders.</p>
+    <a href="./signup" class="inline-block bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700 transition">Go to Sign Up</a>
+    <button onclick="hideSignupPrompt()" class="block text-sm text-gray-500 mt-4 hover:underline">Cancel</button>
+  </div>
+</div>
+<script>
+  function toggleUserMenu() {
+    const menu = document.getElementById("userMenu");
+    if (menu.classList.contains("hidden")) {
+      menu.classList.remove("hidden");
+      renderUserMenu();
+    } else {
+      menu.classList.add("hidden");
+    }
+  }
+
+  function renderUserMenu() {
+    const menu = document.getElementById("userMenu");
+    const loggedIn = localStorage.getItem('loggedIn') === 'true';
+
+    menu.innerHTML = loggedIn
+      ? `
+        <a href="dashboard.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Dashboard</a>
+        <button onclick="logout()" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</button>
+      `
+      : `
+        <a href="./login" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Login</a>
+        <a href="./signup" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Sign Up</a>
+      `;
+  }
+
+  function logout() {
+    localStorage.removeItem('loggedIn');
+    localStorage.removeItem('token'); // Optional: clear token
+    window.location.href = 'https://shoes.iyonicorp.com';
+  }
+
+  // Call on page load to setup menu correctly
+  document.addEventListener("DOMContentLoaded", renderUserMenu);
+</script>
+
+
+
+<!-- Hero Section -->
+<section class="relative overflow-hidden text-white pt-16 h-screen lg:h-[75vh] bg-transparent">
+  <!-- Animated Star Particles -->
+  <canvas id="starfield" class="absolute inset-0 w-full h-full pointer-events-none z-0"></canvas>
+
+  <!-- Center Sneaker Image -->
+  <img 
+    src="https://cdn.shopify.com/s/files/1/0293/9277/products/06-09-21Studio5_RT_11-31-33_22_THOMAS52_Red_0034_RG.jpg?v=1623436892&width=600&height=900&crop=center"
+    alt="Center Sneaker"
+    class="absolute inset-0 w-full h-full object-cover object-center pointer-events-none z-0 lg:left-1/2 lg:top-20 lg:w-[36rem] lg:h-auto lg:transform lg:-translate-x-1/2 lg:-translate-y-[20%] lg:rotate-[10deg]"
+  />
+
+  <!-- Slogan Text -->
+  <div class="relative z-30 flex justify-center items-center h-full">
+    <p class="bg-black bg-opacity-60 text-white px-4 py-2 rounded-md text-sm md:text-lg shadow-md">
+      Where Style Meets Motion
+    </p>
+  </div>
+
+  <!-- Floating Sneakers (Desktop Only) -->
+  <img 
+    src="https://cdn.shopify.com/s/files/1/0293/9277/files/09-12-23Studio5_CB_LW_10-47-06_16_POLAND02_Black_11960_CM.jpg?v=1694800305&width=600&height=900&crop=center" 
+    alt="Sneaker Left" 
+    class="hidden lg:block absolute left-[-3rem] top-20 w-40 lg:w-56 transform rotate-[-20deg] drop-shadow-2xl z-10"
+  >
+  <img 
+    src="https://cdn.shopify.com/s/files/1/0293/9277/files/07-21-23Studio8_CB_LW_10-04-24_7_AELLA1_Pink_9483_DQ.jpg?v=1690330867&width=600&height=900&crop=center" 
+    alt="Sneaker Right" 
+    class="hidden lg:block absolute right-0 top-24 w-44 lg:w-64 transform rotate-[25deg] drop-shadow-2xl z-10"
+  >
+
+  <!-- Additional Floating Sneakers -->
+  <img 
+    src="https://cdn.shopify.com/s/files/1/0293/9277/files/07-02-21Studio5_RT_14-20-04_47_WINDY_Pink_20991_KL.jpg?v=1733879780&width=1000&height=1500&crop=center"
+    alt="Sneaker Extra 1" 
+    class="hidden lg:block absolute left-[20%] bottom-10 w-36 transform rotate-[15deg] drop-shadow-lg z-10"
+  >
+  <img 
+    src="https://cdn.shopify.com/s/files/1/0293/9277/products/Glamour_Up_Heeled_Sandals_-_Nude_DM.jpg?v=1572028746&width=600&height=900&crop=center"
+    alt="Sneaker Extra 2"
+    class="hidden lg:block absolute right-[15%] bottom-8 w-32 transform rotate-[-10deg] drop-shadow-lg z-10"
+  >
+</section>
+
+<script>
+  // Starfield animation for subtle dynamic background stars
+  const canvas = document.getElementById('starfield');
+  const ctx = canvas.getContext('2d');
+  let width, height;
+  let stars = [];
+
+  function init() {
+    resize();
+    stars = [];
+    for (let i = 0; i < 150; i++) {
+      stars.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        radius: Math.random() * 1.2,
+        alpha: Math.random(),
+        speed: 0.02 + Math.random() * 0.03
+      });
+    }
+    animate();
+  }
+
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, width, height);
+    stars.forEach(star => {
+      star.alpha += star.speed;
+      if (star.alpha > 1) star.alpha = 0;
+      ctx.beginPath();
+      ctx.arc(star.x, star.y, star.radius, 0, 2 * Math.PI);
+      ctx.fillStyle = `rgba(255,255,255,${star.alpha.toFixed(2)})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(animate);
+  }
+
+  window.addEventListener('resize', resize);
+  init();
+</script>
+<!-- Category Section -->
+<section id="categories" class="py-12 w-full">
+  <h2 class="text-3xl font-bold text-center mb-10">Shop by Category</h2>
+  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-6 w-full px-4 sm:px-6 lg:px-8">
+
+    <div onclick="openCategory('heels')" class="cursor-pointer group bg-white shadow rounded-lg overflow-hidden hover:shadow-xl transition">
+      <div class="aspect-[3/4] w-full bg-white flex items-center justify-center">
+        <img src="https://cdn.shopify.com/s/files/1/0293/9277/files/12-03-24_S10_17_STANDARD505_Black_CXB_10-12-32_4893_PXF_ES.jpg?v=1733524185&width=600&height=900&crop=center"
+             class="w-full h-full object-contain transition group-hover:scale-105" />
+      </div>
+      <div class="p-3 text-center">
+        <h3 class="text-lg font-semibold text-indigo-600">Heels</h3>
+      </div>
+    </div>
+
+    <!-- Repeat for each category -->
+    <div onclick="openCategory('sandals')" class="cursor-pointer group bg-white shadow rounded-lg overflow-hidden hover:shadow-xl transition">
+      <div class="aspect-[3/4] w-full bg-white flex items-center justify-center">
+        <img src="https://cdn.shopify.com/s/files/1/0293/9277/files/03-20-24_S15_10_LS12017_Tan_KJ_10-44-22__15625_CM_ES.jpg?v=1711741160&width=600&height=900&crop=center"
+             class="w-full h-full object-contain transition group-hover:scale-105" />
+      </div>
+      <div class="p-3 text-center">
+        <h3 class="text-lg font-semibold text-indigo-600">Sandals</h3>
+      </div>
+    </div>
+
+
+    <div onclick="openCategory('wedges')" class="cursor-pointer group bg-white shadow rounded-lg overflow-hidden hover:shadow-xl transition">
+      <div class="aspect-[3/4] w-full bg-white flex items-center justify-center">
+      <img src="https://cdn.shopify.com/s/files/1/0293/9277/products/01-08-20_MS_09-38-49_9_FANNIE100_Black_8721_WG.jpg?v=1610133012&width=600&height=900&crop=center"
+         class="w-full h-full object-contain transition group-hover:scale-105" />
+      </div>
+      <div class="p-3 text-center">
+      <h3 class="text-lg font-semibold text-indigo-600">Wedges</h3>
+      </div>
+    </div>
+
+    <div onclick="openCategory('slides')" class="cursor-pointer group bg-white shadow rounded-lg overflow-hidden hover:shadow-xl transition">
+      <div class="aspect-[3/4] w-full bg-white flex items-center justify-center">
+      <img src="https://cdn.shopify.com/s/files/1/0293/9277/files/05-16-25_S15_38_BLOWOUT25_Brown_CZ_14-05-30_FLATLAY_4966_PXF.jpg?v=1748383363&width=600&height=900&crop=center"
+         class="w-full h-full object-contain transition group-hover:scale-105" />
+      </div>
+      <div class="p-3 text-center">
+      <h3 class="text-lg font-semibold text-indigo-600">Slides</h3>
+      </div>
+    </div>
+
+    <div onclick="openCategory('boots')" class="cursor-pointer group bg-white shadow rounded-lg overflow-hidden hover:shadow-xl transition">
+      <div class="aspect-[3/4] w-full bg-white flex items-center justify-center">
+      <img src="https://cdn.shopify.com/s/files/1/0293/9277/products/10-19-22Studio5_RT_11-43-02_32_BEXIE3_Pink_1893_SG.jpg?v=1666218036&width=600&height=900&crop=center"
+         class="w-full h-full object-contain transition group-hover:scale-105" />
+      </div>
+      <div class="p-3 text-center">
+      <h3 class="text-lg font-semibold text-indigo-600">Boots</h3>
+      </div>
+    </div>
+
+    <div onclick="openCategory('sneakers')" class="cursor-pointer group bg-white shadow rounded-lg overflow-hidden hover:shadow-xl transition">
+      <div class="aspect-[3/4] w-full bg-white flex items-center justify-center">
+      <img src="https://cdn.shopify.com/s/files/1/0293/9277/files/05-23-23Studio8_CB_RS_12-57-49_50_MAD01_Orange_P_2418_MP.jpg?v=1744758533&width=600&height=900&crop=center"
+         class="w-full h-full object-contain transition group-hover:scale-105" />
+      </div>
+      <div class="p-3 text-center">
+      <h3 class="text-lg font-semibold text-indigo-600">Sneakers</h3>
+      </div>
+    </div>
+
+    <div onclick="openCategory('pumps')" class="cursor-pointer group bg-white shadow rounded-lg overflow-hidden hover:shadow-xl transition">
+      <div class="aspect-[3/4] w-full bg-white flex items-center justify-center">
+      <img src="https://cdn.shopify.com/s/files/1/0293/9277/files/08-06-24_S8_55_SELENA52_Brown_ID_SS_15-00-15_4462_PXF.jpg?v=1741975799&width=600&height=900&crop=center"
+         class="w-full h-full object-contain transition group-hover:scale-105" />
+      </div>
+      <div class="p-3 text-center">
+      <h3 class="text-lg font-semibold text-indigo-600">Pumps</h3>
+      </div>
+    </div>
+
+    <div onclick="openCategory('slippers')" class="cursor-pointer group bg-white shadow rounded-lg overflow-hidden hover:shadow-xl transition">
+      <div class="aspect-[3/4] w-full bg-white flex items-center justify-center">
+      <img src="https://cdn.shopify.com/s/files/1/0293/9277/files/06-27-23Studio8_CB_LW_13-54-29_63_MMSL004YEPK_Yellow_7508_SG.jpg?v=1688061967&width=600&height=900&crop=center"
+         class="w-full h-full object-contain transition group-hover:scale-105" />
+      </div>
+      <div class="p-3 text-center">
+      <h3 class="text-lg font-semibold text-indigo-600">Slippers</h3>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- Product Section -->
+<section id="products" class="py-16 w-full">
+  <h2 class="text-3xl font-bold text-center mb-12">All Shoes</h2>
+  <div id="product-list" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 px-4 sm:px-6"></div>
+</section>
+
+  <script>
+    const products = [
+      {
+        id: "AZA-2025-001",
+          category: "sneakers",
+        name: "Air Zoom Alpha",
+        price: 129.99,
+        description: "Experience next-gen cushioning with a breathable mesh upper and bold silhouette.",
+        details: [
+          "Breathable mesh upper for all-day comfort",
+          "Responsive cushioning for performance",
+          "Durable rubber outsole for traction",
+          "Limited edition release with bold design"
+        ],
+        images: [
+          "https://footpatrolblog.s3.eu-west-1.amazonaws.com/wp-content/uploads/2019/02/Nike-Air-Zoom-Alpha-Blog-1.jpg",
+          "https://footpatrolblog.s3.eu-west-1.amazonaws.com/wp-content/uploads/2019/02/Nike-Air-Zoom-Alpha-Blog-2.jpg",
+          "https://footpatrolblog.s3.eu-west-1.amazonaws.com/wp-content/uploads/2019/02/Nike-Air-Zoom-Alpha-Blog-3.jpg"
+        ],
+        colors: ["yellow", "red", "blue"],
+        sizes: [8, 9, 10, 11]
+      },
+      {
+        id: "RRX-2025-002",
+          category: "sneakers", 
+        name: "Retro Runner X",
+        price: 99.99,
+        description: "Classic lines with a modern twist for everyday runners and street legends.",
+        details: [
+          "Retro-inspired design with modern materials",
+          "Lightweight EVA midsole",
+          "Cushioned heel for shock absorption",
+          "Ideal for urban exploration and casual wear"
+        ],
+        images: [
+          "https://grailify.com/rails/active_storage/representations/proxy/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBBOGg5SFE9PSIsImV4cCI6bnVsbCwicHVyIjoiYmxvYl9pZCJ9fQ==--62f1b0d497880369fd325742ac2e719b28533c39/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDRG9MWm05eWJXRjBTU0lJYW5CbkJqb0dSVlE2RW5KbGMybDZaVjkwYjE5bWFYUmJCMmtDc0FScEFuUUNPZ3h4ZFdGc2FYUjVhV009IiwiZXhwIjpudWxsLCJwdXIiOiJ2YXJpYXRpb24ifX0=--a33afcf2561dadd1dd8c8a8ec2ee9b1d76dacbef/A%20Bathing%20Ape%20x%20adidas%20Orketro%20Grailify%20(18).jpg",
+          'https://grailify.com/rails/active_storage/representations/proxy/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBBN2Q5SFE9PSIsImV4cCI6bnVsbCwicHVyIjoiYmxvYl9pZCJ9fQ==--921f166fb0a374a491a463262eb9fb30fc874133/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJYW5CbkJqb0dSVlE2RkhKbGMybDZaVjkwYjE5c2FXMXBkRnNIYVFJZ0Eya0NXQUk9IiwiZXhwIjpudWxsLCJwdXIiOiJ2YXJpYXRpb24ifX0=--b07063de60519c0d803efb6e9d6579b04345a797/A%20Bathing%20Ape%20x%20adidas%20Orketro%20Grailify%20(1).jpg',
+          'https://grailify.com/rails/active_storage/representations/proxy/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBBN2g5SFE9PSIsImV4cCI6bnVsbCwicHVyIjoiYmxvYl9pZCJ9fQ==--41ea651a77e6263ab867f4b1f9ac54ae8ef2dafa/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJYW5CbkJqb0dSVlE2RkhKbGMybDZaVjkwYjE5c2FXMXBkRnNIYVFJZ0Eya0NXQUk9IiwiZXhwIjpudWxsLCJwdXIiOiJ2YXJpYXRpb24ifX0=--b07063de60519c0d803efb6e9d6579b04345a797/A%20Bathing%20Ape%20x%20adidas%20Orketro%20Grailify%20(2).jpg',
+          'https://grailify.com/rails/active_storage/representations/proxy/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBBN3Q5SFE9PSIsImV4cCI6bnVsbCwicHVyIjoiYmxvYl9pZCJ9fQ==--4b44679c9bd3a32524e2164586cbeb1d02564b7b/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJYW5CbkJqb0dSVlE2RkhKbGMybDZaVjkwYjE5c2FXMXBkRnNIYVFJZ0Eya0NXQUk9IiwiZXhwIjpudWxsLCJwdXIiOiJ2YXJpYXRpb24ifX0=--b07063de60519c0d803efb6e9d6579b04345a797/A%20Bathing%20Ape%20x%20adidas%20Orketro%20Grailify%20(5).jpg',
+          'https://grailify.com/rails/active_storage/representations/proxy/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBBOEo5SFE9PSIsImV4cCI6bnVsbCwicHVyIjoiYmxvYl9pZCJ9fQ==--ca0c756ee2acfc927f8413fa38878c65ff93be2b/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJYW5CbkJqb0dSVlE2RkhKbGMybDZaVjkwYjE5c2FXMXBkRnNIYVFJZ0Eya0NXQUk9IiwiZXhwIjpudWxsLCJwdXIiOiJ2YXJpYXRpb24ifX0=--b07063de60519c0d803efb6e9d6579b04345a797/A%20Bathing%20Ape%20x%20adidas%20Orketro%20Grailify%20(12).jpg'
+
+        ],
+        colors: ["white", "gray"],
+        sizes: [7, 8, 9, 10, 11, 12]
+      },
+      {
+        id: "CSP-2025-003",
+          category: "slides", 
+        name: "CloudStep Pro",
+        price: 149.99,
+        description: "Super soft midsole for a floating stride — performance never felt so plush.",
+        details: [
+          "Ultra-lightweight cloud foam cushioning",
+          "Ergonomic arch support",
+          "Slip-resistant tread pattern",
+          "Premium knit upper with seamless construction"
+        ],
+        images: [
+          "https://achilleseg.com/cdn/shop/files/H3A3806-1copy.jpg?v=1744049199&width=540",
+          'https://achilleseg.com/cdn/shop/files/H3A3761-1copy_3ad26e15-7cc2-467c-8167-b5c00ac4de30.jpg?v=1744049199&width=120',
+          'https://achilleseg.com/cdn/shop/files/H3A3765-1copy_0cbe1dc2-4c7c-4745-af8d-320cd1919bc4.jpg?v=1744049199&width=120',
+          'https://achilleseg.com/cdn/shop/files/H3A3764-1copy_6b1f6cfa-42dc-43d1-bd94-0cdaf1d7e98d.jpg?v=1744049199&width=120'
+        ],
+        colors: ["white", "blue"],
+        sizes: [8, 9, 10, 11]
+      },
+      {
+        id: "HLS-2025-004",
+          category: "heels", 
+        name: "Highline Stiletto",
+        price: 199.99,
+        description: "Elevate your look with a sleek stiletto heel and luxurious leather finish.",
+        details: [
+          "Premium leather upper with elegant finish",
+          "6-inch stiletto heel for dramatic height",
+          "Cushioned insole for comfort",
+          "Perfect for formal occasions and nights out"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/05-21-21Studio5_RT_12-19-02_22_DANNA_Black_0803_NT.jpg?v=1621899515&width=600&height=900&crop=center",
+          'https://cdn.shopify.com/s/files/1/0293/9277/products/05-21-21Studio5_RT_12-19-10_22_DANNA_Black_0804_NT.jpg?v=1621899509&width=600&height=900&crop=center',
+          'https://cdn.shopify.com/s/files/1/0293/9277/products/05-21-21Studio5_RT_12-21-09_22_DANNA_Black_0805_NT.jpg?v=1621899557&width=600&height=900&crop=center'
+        ],
+        colors: ["black"],
+        sizes: [6, 7, 8, 9, 10]
+      },
+      {
+        id: "WED-2025-005",
+          category: "wedges", 
+        name: "Weekend Wedge",
+        price: 89.99,
+        description: "Casual chic with a comfortable wedge heel for all-day wear.",
+        details: [
+          "Canvas upper with stylish patterns",
+          "2.5-inch wedge heel for added height",
+          "Cushioned footbed for comfort",
+          "Versatile for casual outings and brunches"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/01-08-20_MS_09-38-49_9_FANNIE100_Black_8721_WG.jpg?v=1610133012&width=600&height=900&crop=centerr",
+          'https://cdn.shopify.com/s/files/1/0293/9277/products/01-08-20_MS_09-38-57_9_FANNIE100_Black_8725_WG.jpg?v=1610133013&width=600&height=900&crop=center',
+          'https://cdn.shopify.com/s/files/1/0293/9277/products/01-08-20_MS_09-38-53_9_FANNIE100_Black_8723_WG.jpg?v=1610133012&width=600&height=900&crop=center'
+        ],
+        colors: ["blue", "tan"],
+        sizes: [6, 7, 8, 9, 10]
+      },
+      {
+        id: "BTS-2025-006",
+          category: "boots", 
+        name: "Brave Trail Boots",
+        price: 159.99,
+        description: "Rugged boots designed for adventure with waterproof protection and durable grip.",
+        details: [
+          "Waterproof leather upper with reinforced toe",
+          "High-traction rubber outsole for stability",
+          "Cushioned collar for ankle support",
+          "Ideal for hiking, camping, and outdoor activities"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/10-15-24_S10_19_DARKHORSE_Black_CXB_09-22-22_14799_ES.jpg?v=1729184508&width=600&height=900&crop=center",
+          'https://cdn.shopify.com/s/files/1/0293/9277/files/10-29-24_S3_46_DARKHORSE_Black_AZ_AP_14-16-04_84936_PXF.jpg?v=1730322689&width=600&height=900&crop=center',
+          'https://cdn.shopify.com/s/files/1/0293/9277/files/10-29-24_S3_46_DARKHORSE_Black_AZ_AP_14-16-24_84940_PXF.jpg?v=1730322689&width=600&height=900&crop=center'
+        ],
+        colors: ["brown", "black"],
+        sizes: [8, 9, 10, 11, 12]
+      },
+      {
+        id: "SLD-2025-007",
+          category: "slides", 
+        name: "Summer Slide",
+        price: 49.99,
+        description: "Easy slip-on slides with a cushioned footbed for ultimate relaxation.",
+        details: [
+          "Soft EVA foam construction",
+          "Quick-drying and water-resistant",
+          "Lightweight and flexible design",
+          "Perfect for poolside lounging or beach days"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/03-08-25_S9_19_ANDIE5_Nude_KS_DO_09-59-30_0187_PXF.jpg?v=1741978656&width=600&height=900&crop=center",
+          'https://cdn.shopify.com/s/files/1/0293/9277/files/03-07-25_S10_96_ANDIE5_Nude_ZSR_CXB_14-04-33_FLATLAY_17213_PXF.jpg?v=1741978656&width=600&height=900&crop=center',
+          'https://cdn.shopify.com/s/files/1/0293/9277/files/03-07-25_S10_96_ANDIE5_Nude_ZSR_CXB_14-04-33_FLATLAY_17214_PXF.jpg?v=1741978656&width=600&height=900&crop=center'
+        ],
+        colors: ["black", "white"],
+        sizes: [7, 8, 9, 10, 11]
+      },
+      {
+        id: "PMP-2025-008",
+          category: "pumps", 
+        name: "Perfect Pump",
+        price: 129.99,
+        description: "Classic pumps with a sleek silhouette and comfortable heel for all-day elegance.",
+        details: [
+          "Soft suede upper with pointed toe",
+          "3-inch block heel for stability",
+          "Cushioned insole for comfort",
+          "Versatile for office wear or evening outings"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/04-13-20Studio1_MA_10-16-03_2_TABANA01C_BLack_1101_JK.jpg?v=1596132802&width=600&height=900&crop=center",
+          'https://cdn.shopify.com/s/files/1/0293/9277/products/04-13-20Studio1_MA_10-16-16_2_TABANA01C_BLack_1103_JK.jpg?v=1586910197&width=600&height=900&crop=center',
+          'https://cdn.shopify.com/s/files/1/0293/9277/products/04-13-20_studio_1_ma_10-15-47_2_tabana01c_black_1096_jk.jpg?v=1596132802&width=600&height=900&crop=center'
+        ],
+        colors: ["black", "nude"],
+        sizes: [6, 7, 8, 9, 10]
+      },
+      {
+        id: "SDL-2025-009",
+        category: "sandals",
+        name: "Sunny Day Sandal",
+        price: 59.99,
+        description: "Lightweight sandals with a flexible sole and vibrant colors for summer fun.",
+        details: [
+          "Adjustable ankle strap for secure fit",
+          "Flexible rubber sole for comfort",
+          "Water-resistant materials",
+          "Available in multiple bright colors"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/05-07-24_S10_32_LIZAB_White_CXB_12-04-24_11524_SG_ES.jpg?v=1721931990&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/05-07-24_S10_32_LIZAB_White_CXB_12-04-24_11523_SG_ES.jpg?v=1721931990&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/05-07-24_S8_51_LIZAB_White_TH_PC_13-47-25_79781_PXF.jpg?v=1721931990&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/05-07-24_S8_51_LIZAB_White_TH_PC_13-47-43_79782_PXF.jpg?v=1721931990&width=600&height=900&crop=center"
+        ],
+        colors: ["yellow", "pink", "blue"],
+        sizes: [6, 7, 8, 9, 10]
+      },
+      {
+        id: "SLP-2025-010",
+        category: "slippers",
+        name: "Cozy Home Slipper",
+        price: 39.99,
+        description: "Ultra-soft slippers with memory foam for the ultimate at-home comfort.",
+        details: [
+          "Plush faux fur lining",
+          "Memory foam insole",
+          "Non-slip rubber outsole",
+          "Machine washable"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/06-27-23Studio8_CB_LW_13-54-29_63_MMSL004YEPK_Yellow_7508_SG.jpg?v=1688061967&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/06-27-23Studio8_CB_LW_13-54-14_63_MMSL004YEPK_Yellow_7507_SG.jpg?v=1688061967&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/06-27-23Studio8_CB_LW_13-54-08_63_MMSL004YEPK_Yellow_7506_SG.jpg?v=1688061967&width=600&height=900&crop=center"
+        ],
+        colors: ["gray", "yellow", "pink"],
+        sizes: [5, 6, 7, 8, 9, 10]
+      },
+      {
+        id: "BTS-2025-011",
+        category: "boots",
+        name: "Urban Explorer Boot",
+        price: 179.99,
+        description: "Modern lace-up boots with rugged soles for city and trail adventures.",
+        details: [
+          "Premium leather upper",
+          "Padded collar and tongue",
+          "Grippy lug outsole",
+          "Water-resistant finish"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/08-17-18_Studio_3_11-19_AM_ISLA45_Black_2102_JD.jpg?v=1577484739&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/08-17-18_Studio_4_13-48-33_ISLA45_Black_0123_AG.jpg?v=1577484739&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/08-17-18_Studio_3_11-19_AM_ISLA45_Black_2105_JD.jpg?v=1577484739&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/08-17-18_Studio_3_11-18_AM_ISLA45_Black_2100_JD.jpg?v=1577484739&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/08-17-18_Studio_4_13-48-06_ISLA45_Black_0120_AG.jpg?v=1577484739&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/08-17-18_Studio_4_13-48-50_ISLA45_Black_0001_AG.jpg?v=1577484739&width=600&height=900&crop=center"
+        ],
+        colors: ["black", "pink"],
+        sizes: [7, 8, 9, 10, 11, 12]
+      },
+      {
+        id: "HLS-2025-012",
+        category: "heels",
+        name: "Glam Night Heel",
+        price: 149.99,
+        description: "Sparkling heels with rhinestone accents for a glamorous evening look.",
+        details: [
+          "Rhinestone-embellished straps",
+          "4-inch stiletto heel",
+          "Cushioned footbed",
+          "Adjustable buckle closure"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/Plot_Twist_Heel_-_Black_JK.jpg?v=1677732222&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/03-14-19_Studio_1_RM_16-51-29_FANNY32_Black_0265_WG_NT.jpg?v=1677732222&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/03-14-19_Studio_1_RM_16-52-21_FANNY32_Black_0270_WG_NT.jpg?v=1677732222&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/03-14-19_Studio_1_RM_16-51-19_FANNY32_Black_0261_WG_NT.jpg?v=1677732222&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/03-14-19_Studio_1_RM_16-51-31_FANNY32_Black_0266_WG_NT.jpg?v=1677732222&width=600&height=900&crop=center"
+        ],
+        colors: ["silver", "black"],
+        sizes: [6, 7, 8, 9]
+      },
+      {
+        id: "WND-2025-013",
+        category: "wedges",
+        name: "Windy Wedge",
+        price: 109.99,
+        description: "Lightweight cork wedge with breezy straps for summer comfort.",
+        details: [
+          "Natural cork wedge heel",
+          "Breathable fabric straps",
+          "Slip-on design",
+          "Perfect for summer outings"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/04-03-24_S10_16_ALEXANDRIA_Black_CXB_11-49-06_10552_SG_ES.jpg?v=1721434754&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/04-03-24_S10_16_ALEXANDRIA_Black_CXB_11-49-06_10553_SG_ES.jpg?v=1721434754&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/04-04-24_S8_1_ALEXANDRIA_Black_ID_PC_09-46-25_65488_EH.jpg?v=1713195285&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/04-04-24_S8_1_ALEXANDRIA_Black_ID_PC_09-44-53_65485_EH.jpg?v=1721434754&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/04-04-24_S8_1_ALEXANDRIA_Black_ID_PC_09-45-15_65486_PXF.jpg?v=1721434754&width=600&height=900&crop=center"
+        ],
+        colors: ["pink", "white"],
+        sizes: [6, 7, 8, 9, 10]
+      },
+      {
+        id: "GLM-2025-014",
+        category: "heels",
+        name: "Glamour Up Sandal",
+        price: 139.99,
+        description: "Elegant nude heeled sandals for a chic, versatile look.",
+        details: [
+          "Nude patent finish",
+          "Adjustable ankle strap",
+          "3.5-inch heel",
+          "Great for parties and events"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/Glamour_Up_Heeled_Sandals_-_Nude_DM.jpg?v=1572028746&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/07-25-19_Studio_1_DV_14-50-23_71__MELY101_Nude__2_RG.jpg?v=1572028746&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/07-25-19_Studio_1_DV_14-50-23_71__MELY101_Nude__7_RG.jpg?v=1572028746&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/07-25-19_Studio_1_DV_14-50-23_71__MELY101_Nude__3_RG.jpg?v=1572028746&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/07-25-19_Studio_1_DV_14-50-23_71__MELY101_Nude__RG.jpg?v=1572028746&width=600&height=900&crop=center"
+        ],
+        colors: ["nude"],
+        sizes: [6, 7, 8, 9, 10]
+      },
+      {
+        id: "SEL-2025-015",
+        category: "pumps",
+        name: "Selena Block Pump",
+        price: 119.99,
+        description: "Trendy block-heel pumps with a modern square toe.",
+        details: [
+          "Square toe design",
+          "Chunky block heel",
+          "Soft brown leather",
+          "Comfort insole"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/09-13-22Studio5_RT_13-27-53_39_DOSSY01_Black_0913_SG.jpg?v=1663180117&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/09-13-22Studio5_RT_13-27-28_39_DOSSY01_Black_0910_SG.jpg?v=1663180117&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/09-13-22Studio5_RT_13-27-32_39_DOSSY01_Black_0911_SG.jpg?v=1663180117&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/09-13-22Studio5_RT_13-27-35_39_DOSSY01_Black_0912_SG.jpg?v=1663180116&width=600&height=900&crop=center"
+        ],
+        colors: ["brown"],
+        sizes: [6, 7, 8, 9, 10]
+      },
+      {
+        id: "SNK-2025-016",
+        category: "sneakers",
+        name: "Velocity Runner",
+        price: 119.99,
+        description: "Lightweight running sneakers with breathable mesh and responsive cushioning.",
+        details: [
+          "Engineered mesh upper for ventilation",
+          "Responsive foam midsole",
+          "Durable rubber outsole",
+          "Ideal for daily runs and workouts"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/11-29-23Studio8_CB_LW_11-46-42_43_ZURIFN_BlackBlack_15966_PXF.jpg?v=1701801440&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/11-29-23Studio8_CB_LW_11-46-38_43_ZURIFN_BlackBlack_15965_PXF.jpg?v=1701801440&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/11-29-23Studio8_CB_LW_11-46-45_43_ZURIFN_BlackBlack_15967_PXF.jpg?v=1701801440&width=600&height=900&crop=center",
+        ],
+        colors: ["blue", "white"],
+        sizes: [7, 8, 9, 10, 11]
+      },
+      {
+        id: "HLS-2025-017",
+        category: "heels",
+        name: "Crystal Chic Heel",
+        price: 159.99,
+        description: "Shimmering crystal heels for a dazzling night out.",
+        details: [
+          "Crystal-embellished straps",
+          "4.5-inch stiletto heel",
+          "Cushioned insole",
+          "Adjustable ankle buckle"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/07-20-22Studio7_RT_14-11-53_35_MARIA2_Clear_R_144_KS.jpg?v=1744053107&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/07-20-22Studio7_RT_14-11-53_35_MARIA2_Clear_R_142_EH.jpg?v=1744053107&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/07-20-22Studio7_RT_14-11-53_35_MARIA2_Clear_R_145_KS.jpg?v=1658362789&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/02-18-20_Studio_6_MA_OM_12-45-55_WIREFRAMES_FOR_BUYERS_1101_RG_DM.jpg?v=1744053107&width=600&height=900&crop=center"
+        ],
+        colors: ["silver"],
+        sizes: [6, 7, 8, 9]
+      },
+      {
+        id: "SND-2025-018",
+        category: "sandals",
+        name: "Breeze Comfort Sandal",
+        price: 69.99,
+        description: "Open-toe sandals with soft straps and flexible sole for summer comfort.",
+        details: [
+          "Soft synthetic straps",
+          "Flexible EVA sole",
+          "Slip-on design",
+          "Water-friendly"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/04-16-25_S15_91_LUKE25_BeigeBrown_ZSR_CZ_14-41-31_FLATLAY_11040_PXF.jpg?v=1749085980&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/04-23-25_S9_44_LUKE25_BeigeBrown_KJ_IM_11-14-25_3892_PXF.jpg?v=1749085980&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/04-23-25_S9_44_LUKE25_BeigeBrown_KJ_IM_11-14-43_3894_PXF.jpg?v=1745621523&width=600&height=900&crop=center"
+        ],
+        colors: ["tan", "black"],
+        sizes: [6, 7, 8, 9, 10]
+      },
+      {
+        id: "BTS-2025-019",
+        category: "boots",
+        name: "Mountain Trek Boot",
+        price: 189.99,
+        description: "Heavy-duty boots for hiking and outdoor adventures.",
+        details: [
+          "Waterproof upper",
+          "Aggressive tread outsole",
+          "Padded collar and tongue",
+          "Reinforced toe cap"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/11-08-24_S15_36_CHALLENGE_Camel_ZSR_CZ_11-22-176299_PXF_9a1feb7b-bb6d-4c2b-b36e-ad520ae45ef5.jpg?v=1731959300&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/11-08-24_S15_36_CHALLENGE_Camel_ZSR_CZ_11-22-306301_PXF_02a99245-6a22-4442-9485-9ca8863594a3.jpg?v=1731959300&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/11-18-24_S6_21_CHALLENGE_Camel_AZ_AP_10-06-39_70113_PXF.jpg?v=1732045813&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/11-08-24_S15_36_CHALLENGE_Camel_ZSR_CZ_11-22-486302_PXF_BH.jpg?v=1731959049&width=600&height=900&crop=center"
+        ],
+        colors: ["brown", "olive"],
+        sizes: [8, 9, 10, 11, 12]
+      },
+      {
+        id: "SLD-2025-020",
+        category: "slides",
+        name: "Urban Slide",
+        price: 54.99,
+        description: "Minimalist slides for everyday wear, featuring a soft footbed.",
+        details: [
+          "Contoured footbed",
+          "Slip-on style",
+          "Lightweight and flexible",
+          "Easy to clean"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/03-28-24_S8_3_AYKO04_Black_ID_IM_10-21-21_63732_PXF.jpg?v=1721432805&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/03-21-24_S15_71_AYKO04_Black_CZ_11-11-57__16063_CM_ES.jpg?v=1721432805&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/03-28-24_S8_3_AYKO04_Black_ID_IM_10-20-59_63730_PXF.jpg?v=1721432805&width=600&height=900&crop=center",
+          'https://cdn.shopify.com/s/files/1/0293/9277/files/03-21-24_S15_71_AYKO04_Black_CZ_11-11-57__16064_CM_ES.jpg?v=1721432805&width=600&height=900&crop=center'
+        ],
+        colors: ["black", "white"],
+        sizes: [7, 8, 9, 10, 11]
+      },
+      {
+        id: "WED-2025-021",
+        category: "wedges",
+        name: "Sunset Wedge",
+        price: 99.99,
+        description: "Colorful wedge sandals with a comfortable cork sole.",
+        details: [
+          "Colorful textile upper",
+          "Cork wedge heel",
+          "Adjustable ankle strap",
+          "Cushioned footbed"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/04-24-24_S15_32_ZAHN_Gold_CZ_11-19-03_0140_SG_ES.jpg?v=1721434584&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/04-26-24_S8_2_ZAHN_Gold_ID_PC_09-46-28_73277_PXF.jpg?v=1721434584&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/04-24-24_S15_32_ZAHN_Gold_CZ_11-19-510355_SG_ES.jpg?v=1714498187&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/04-26-24_S8_2_ZAHN_Gold_ID_PC_09-46-51_73279_PXF.jpg?v=1721434584&width=600&height=900&crop=center"
+        ],
+        colors: ["gold"],
+        sizes: [6, 7, 8, 9, 10]
+      },
+      {
+        id: "PMP-2025-022",
+        category: "pumps",
+        name: "Classic Pointed Pump",
+        price: 109.99,
+        description: "Timeless pointed-toe pumps for work or special occasions.",
+        details: [
+          "Pointed toe",
+          "3-inch heel",
+          "Leather upper",
+          "Slip-on design"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/07-25-24_S10_50_CONDITION39_Burgundycombo_CXB_13-34-18_13412_ES.jpg?v=1722285960&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/07-25-24_S10_50_CONDITION39_Burgundycombo_CXB_13-34-18_13413_ES.jpg?v=1722285960&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/07-26-24_S7_45_CONDITION39_Burgundycombo_ID_PC_15-07-08_0315_PXF.jpg?v=1722359103&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/07-26-24_S7_45_CONDITION39_Burgundycombo_ID_PC_15-07-29_0316_PXF.jpg?v=1722359103&width=600&height=900&crop=center"
+        ],
+        colors: ["black", "red"],
+        sizes: [6, 7, 8, 9, 10]
+      },
+      {
+        id: "SLP-2025-023",
+        category: "slippers",
+        name: "Plush Dream Slipper",
+        price: 44.99,
+        description: "Super soft plush slippers for cozy nights at home.",
+        details: [
+          "Ultra-plush lining",
+          "Memory foam insole",
+          "Non-slip sole",
+          "Machine washable"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/06-29-23Studio8_CB_LW_11-43-42_43_IVORIS_Tan_7819_DQ.jpg?v=1688146002&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/06-29-23Studio8_CB_LW_11-43-22_43_IVORIS_Tan_7818_DQ.jpg?v=1688146002&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/06-29-23Studio8_CB_LW_11-43-14_43_IVORIS_Tan_7817_DQ.jpg?v=1688146002&width=600&height=900&crop=center"
+        ],
+        colors: ["pink", "gray"],
+        sizes: [5, 6, 7, 8, 9, 10]
+      },
+      {
+        id: "SNK-2025-024",
+        category: "sneakers",
+        name: "Street Flex Sneaker",
+        price: 109.99,
+        description: "Flexible street sneakers with a modern look and all-day comfort.",
+        details: [
+          "Flexible knit upper",
+          "Lightweight EVA sole",
+          "Breathable lining",
+          "Great for walking and casual wear"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/12-04-24_S15_9_LESTER_Black_CZ_08-49-38_1802_PXF.jpg?v=1733762832&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/12-04-24_S15_9_LESTER_Black_CZ_08-49-38_1803_PXF.jpg?v=1739031129&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/02-06-25_S9_59_LESTER_Black_CZ_SS_14-24-43_3565_PXF.jpg?v=1739031129&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/02-06-25_S9_59_LESTER_Black_CZ_SS_14-26-30_3567_PXF.jpg?v=1739031122&width=600&height=900&crop=center"
+        ],
+        colors: ["gray", "white"],
+        sizes: [7, 8, 9, 10, 11]
+      },
+      {
+        id: "HLS-2025-025",
+        category: "heels",
+        name: "Velvet Touch Heel",
+        price: 129.99,
+        description: "Elegant velvet heels with a soft touch and classic silhouette.",
+        details: [
+          "Velvet upper",
+          "3.5-inch heel",
+          "Cushioned insole",
+          "Slip-on style"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/04-11-25_S15_19_MIA85_Chocolate_ZSR_KJ_13-48-55_FLATLAY_10727_PXF.jpg?v=1744661578&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/04-11-25_S15_19_MIA85_Chocolate_ZSR_KJ_13-49-06_FLATLAY_10729_PXF.jpg?v=1745354134&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/04-18-25_S5_19_MIA85_Chocolate_KJ_PC_10-13-36_13216_PXF.jpg?v=1745354134&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/04-18-25_S5_19_MIA85_Chocolate_KJ_PC_10-13-45_13218_PXF.jpg?v=1745354132&width=600&height=900&crop=center"
+        ],
+        colors: ["burgundy", "black"],
+        sizes: [6, 7, 8, 9, 10]
+      },
+      {
+        id: "BTS-2025-026",
+        category: "boots",
+        name: "Chelsea Classic Boot",
+        price: 139.99,
+        description: "Timeless Chelsea boots with elastic side panels and durable sole.",
+        details: [
+          "Leather upper",
+          "Elastic side panels",
+          "Pull tab for easy on/off",
+          "Rubber outsole"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/10-26-21Studio6_SN_14-24-38_48_MANHATTANFEELINGS_Green_2416_KL.jpg?v=1635805101&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/10-26-21Studio6_SN_14-23-39_48_MANHATTANFEELINGS_Green_2413_KL.jpg?v=1635805101&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/10-26-21Studio6_SN_14-23-37_48_MANHATTANFEELINGS_Green_2412_KL.jpg?v=1635805102&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/10-26-21Studio6_SN_14-23-41_48_MANHATTANFEELINGS_Green_2414_KL.jpg?v=1635805102&width=600&height=900&crop=center"
+        ],
+        colors: ["black"],
+        sizes: [7, 8, 9, 10, 11, 12]
+      },
+      {
+        id: "SDL-2025-027",
+        category: "sandals",
+        name: "Urban Strap Sandal",
+        price: 64.99,
+        description: "Modern sandals with adjustable straps and cushioned footbed.",
+        details: [
+          "Adjustable hook-and-loop straps",
+          "Cushioned EVA footbed",
+          "Flexible rubber sole",
+          "Water-friendly"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/05-11-23Studio8_CB_RS_1-36PM_52_VALERIEC_Black_3510_PXF.jpg?v=1684361048&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/05-11-23Studio8_CB_RS_1-36PM_52_VALERIEC_Black_3509_PXF.jpg?v=1684429434&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/05-11-23Studio8_CB_RS_1-36PM_52_VALERIEC_Black_3508_PXF_ES.jpg?v=1684429434&width=600&height=900&crop=center"
+        ],
+        colors: ["black"],
+        sizes: [6, 7, 8, 9, 10]
+      },
+      {
+        id: "SLD-2025-028",
+        category: "slides",
+        name: "Comfy Foam Slide",
+        price: 39.99,
+        description: "Ultra-comfy foam slides for home or poolside relaxation.",
+        details: [
+          "Soft foam construction",
+          "Slip-on design",
+          "Textured outsole for grip",
+          "Water-resistant"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/11-04-20Holiday_Flats_BB_14-22-25_14616_RG.jpg?v=1606263118&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/10-02-20Studio4_AP_15-22-22_7_FANZZY_Black_12281_RA.jpg?v=1606263118&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/10-02-20Studio4_AP_15-22-22_7_FANZZY_Black_12282_RA.jpg?v=1606263118&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/10-13-20_HOLIDAYFLATS_BB_JH_15-18-41HOLIDAYFLATS7340_RG_84dd35b5-0d1b-46de-917c-1bc898593aea.jpg?v=1606263118&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/10-02-20Studio4_AP_15-22-22_7_FANZZY_Black_12283_RA.jpg?v=1606263118&width=600&height=900&crop=center"
+        ],
+        colors: ["black"],
+        sizes: [7, 8, 9, 10, 11]
+      },
+      {
+        id: "WED-2025-029",
+        category: "wedges",
+        name: "Tropical Wedge",
+        price: 119.99,
+        description: "Bright, tropical-inspired wedges for summer parties.",
+        details: [
+          "Printed textile upper",
+          "Cork wedge heel",
+          "Adjustable ankle strap",
+          "Cushioned footbed"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/05-29-24_S6_11_NEEDYOU_Cream_ID_AC_10-05-06_8662_PXF.jpg?v=1721434705&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/05-28-24_S15_27_NEEDYOU_Cream_CZ_13-08-371279_SG_ES.jpg?v=1721434705&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/05-28-24_S15_27_NEEDYOU_Cream_CZ_13-08-531283_SG_ES.jpg?v=1721434705&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/05-29-24_S6_11_NEEDYOU_Cream_ID_AC_10-05-29_8663_PXF.jpg?v=1721434705&width=600&height=900&crop=center"
+        ],
+        colors: ["yellow", "green"],
+        sizes: [6, 7, 8, 9, 10]
+      },
+      {
+        id: "PMP-2025-030",
+        category: "pumps",
+        name: "Evening Shine Pump",
+        price: 139.99,
+        description: "Shiny pumps with a metallic finish for special occasions.",
+        details: [
+          "Metallic synthetic upper",
+          "Pointed toe",
+          "3-inch heel",
+          "Slip-on style"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/07-26-24_S7_8_JULIE6_Black_ID_PC_10-27-46_0199_PXF.jpg?v=1722357961&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/07-25-24_S10_55_JULIE6_Black_CXB_14-08-01_1083_SG_ES.jpg?v=1722286086&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/07-26-24_S7_8_JULIE6_Black_ID_PC_10-26-55_0196_PXF.jpg?v=1722357961&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/07-26-24_S7_8_JULIE6_Black_ID_PC_10-28-36_0200_PXF.jpg?v=1722357961&width=600&height=900&crop=center"
+        ],
+        colors: ["silver"],
+        sizes: [6, 7, 8, 9, 10]
+      },
+      {
+        id: "SLP-2025-031",
+        category: "slippers",
+        name: "Winter Warm Slipper",
+        price: 49.99,
+        description: "Warm slippers with faux fur lining for cold winter days.",
+        details: [
+          "Faux fur lining",
+          "Memory foam insole",
+          "Non-slip sole",
+          "Machine washable"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/04-26-24_S8_28_LM12431_Black_ID_PC_11-53-59_73412_PXF.jpg?v=1714493868&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/04-26-24_S8_28_LM12431_Black_ID_PC_11-54-17_73413_PXF.jpg?v=1714584504&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/04-25-24_S15_87_LM12431_Black_CZ_14-48-230639_SG_ES.jpg?v=1714584504&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/04-25-24_S15_87_LM12431_Black_CZ_14-48-170638_SG_ES.jpg?v=1714584504&width=600&height=900&crop=center"
+        ],
+        colors: ["gray", "brown"],
+        sizes: [5, 6, 7, 8, 9, 10]
+      },
+      {
+        id: "SNK-2025-032",
+        category: "sneakers",
+        name: "Urban Pulse Sneaker",
+        price: 114.99,
+        description: "Modern city sneakers with a lightweight sole and breathable mesh.",
+        details: [
+          "Breathable mesh upper",
+          "Lightweight EVA outsole",
+          "Reflective accents for night walks",
+          "Memory foam insole"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/07-29-24_Fall-Denim-Collection_Still-Life_2_NOLLY01_Blue_CXB_11-21-23_1238_BH_ES_MH.jpg?v=1723487576&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/03-05-24_S8_6_NOLLY01_Blue_TH_PC_09-40-11_55280_PXF.jpg?v=1723487580&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/02-29-24_S10_23_NOLLY01_Blue_P_CXB_11-09-29_6848_CM_ES.jpg?v=1723487580&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/02-29-24_S10_23_NOLLY01_Blue_P_CXB_10-52-14_6013_CM_ES.jpg?v=1723487580&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/02-29-24_S10_23_NOLLY01_Blue_P_CXB_11-06-46_6036_CM_ES.jpg?v=1723487580&width=600&height=900&crop=center"
+        ],
+        colors: ["blue"],
+        sizes: [7, 8, 9, 10, 11]
+      },
+      {
+        id: "HLS-2025-033",
+        category: "heels",
+        name: "Midnight Velvet Heel",
+        price: 149.99,
+        description: "Luxurious velvet heels with a midnight blue finish and elegant design.",
+        details: [
+          "Velvet upper in midnight blue",
+          "4-inch stiletto heel",
+          "Cushioned footbed",
+          "Slip-on style"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/01-18-24_S7_28_GISELLEB_Silver_TH_AC_11-22-56_10100_PXF.jpg?v=1706808900&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/01-18-24_S7_28_GISELLEB_Silver_TH_AC_11-22-09_10098_PXF.jpg?v=1706808900&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/01-18-24_S7_28_GISELLEB_Silver_TH_AC_11-21-52_10097_PXF.jpg?v=1706808861&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/01-22-24_S10_14_GISELLEB_Silver_CXB_13-26-39_2000_ES.jpg?v=1706808900&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/01-22-24_S10_14_GISELLEB_Silver_CXB_13-26-39_1997_ES.jpg?v=1706808900&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/01-22-24_S10_14_GISELLEB_Silver_CXB_13-26-39_2001_ES.jpg?v=1706808847&width=600&height=900&crop=center"
+        ],
+        colors: ["silver"],
+        sizes: [6, 7, 8, 9]
+      },
+      {
+        id: "BTS-2025-034",
+        category: "boots",
+        name: "Ridge Walker Boot",
+        price: 169.99,
+        description: "Durable boots for hiking with reinforced toe and padded collar.",
+        details: [
+          "Reinforced toe cap",
+          "Padded collar and tongue",
+          "Water-resistant upper",
+          "Aggressive tread outsole"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/07-16-24_S15_29_OMW2449_Grey_CZ_10-15-502891_SG_ES.jpg?v=1721750449&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/07-16-24_S15_29_OMW2449_Grey_CZ_10-16-012893_SG_ES.jpg?v=1721750449&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/07-16-24_S15_29_OMW2449_Grey_CZ_10-16-402894_SG_ES.jpg?v=1721750448&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/07-19-24_S8_57_OMW2449_Grey_AZ_SS_14-41-46_38753_PXF.jpg?v=1721846251&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/07-19-24_S8_57_OMW2449_Grey_AZ_SS_14-41-46_38754_PXF.jpg?v=1721846251&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/07-19-24_S8_57_OMW2449_Grey_AZ_SS_14-41-46_38752_PXF.jpg?v=1721846251&width=600&height=900&crop=center"
+        ],
+        colors: ["black"],
+        sizes: [8, 9, 10, 11, 12]
+      },
+      {
+        id: "SDL-2025-035",
+        category: "sandals",
+        name: "Seaside Strap Sandal",
+        price: 74.99,
+        description: "Comfortable sandals with adjustable straps and cushioned sole for beach days.",
+        details: [
+          "Adjustable hook-and-loop straps",
+          "Cushioned EVA footbed",
+          "Water-friendly materials",
+          "Flexible rubber sole"
+        ],
+        images: [
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/02-24-23Studio7_CB_RS_11-36-28_46_BAJA_White_P_2656_JB_MH.jpg?v=1677890032&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/02-24-23Studio7_CB_RS_11-36-46_46_BAJA_White_P_2658_JB.jpg?v=1677890032&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/02-24-23Studio7_CB_RS_11-36-42_46_BAJA_White_P_2657_JB.jpg?v=1677890032&width=600&height=900&crop=center",
+          "https://cdn.shopify.com/s/files/1/0293/9277/products/02-24-23Studio7_CB_RS_11-36-51_46_BAJA_White_P_2659_JB.jpg?v=1677890032&width=600&height=900&crop=center"
+        ],
+        colors: ["blue", "white"],
+        sizes: [6, 7, 8, 9, 10]
+      },
+
+    ];
+
+// Inject cards
+const container = document.getElementById("product-list");
+products.forEach(product => {
+  container.innerHTML += `
+    <div class="bg-transparent rounded-lg overflow-hidden hover:shadow-xl transition duration-300 flex flex-col h-[400px]">
+      <a href="./product?id=${product.id}" class="flex items-center justify-center h-[260px] w-full overflow-hidden">
+        <img src="${product.images[0]}" alt="${product.name}" class="object-contain h-full w-full" />
+      </a>
+      <div class="p-4 flex-1 flex flex-col">
+        <h3 class="text-lg font-semibold">${product.name}</h3>
+        <p class="text-gray-500 mb-2">$${product.price}</p>
+        <a href="./product?id=${product.id}" class="mt-auto block text-center bg-indigo-600 text-white py-2 rounded hover:bg-indigo-500">View Product</a>
+      </div>
+    </div>
+  `;
+});
+
+
+    // Store all data in localStorage
+    localStorage.setItem("shoeProducts", JSON.stringify(products));
+    
+  </script>
+  <script>
+  function openCategory(name) {
+    window.location.href = `./category?name=${encodeURIComponent(name)}`;
+  }
+
+
+
+
+    function updateCartUI() {
+  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  const container = document.getElementById("cart-items");
+  const count = document.getElementById("cart-count");
+  container.innerHTML = "";
+
+  let total = 0;
+  count.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  cart.forEach((item, index) => {
+    const productImage = products.find(p => p.id === item.id)?.images[0] || '';
+    const subtotal = item.price * item.quantity;
+    total += subtotal;
+
+    const div = document.createElement('div');
+    div.className = 'flex items-start gap-3 border-b pb-3';
+
+    div.innerHTML = `
+      <img src="${productImage}" class="w-16 h-16 object-contain rounded" />
+      <div class="flex-1">
+        <p class="font-medium">${item.name}</p>
+        <p class="text-sm text-gray-500">Size: ${item.size}, Color: ${item.color}</p>
+        <p class="text-sm text-gray-700">$${item.price} × ${item.quantity} = <strong>$${subtotal.toFixed(2)}</strong></p>
+        <div class="flex items-center gap-2 mt-1">
+          <button onclick="changeQuantity(${index}, -1)" class="text-xs bg-gray-200 px-2 rounded">−</button>
+          <span>${item.quantity}</span>
+          <button onclick="changeQuantity(${index}, 1)" class="text-xs bg-gray-200 px-2 rounded">+</button>
+          <button onclick="removeCartItem(${index})" class="text-xs text-red-600 ml-auto">Remove</button>
+        </div>
+      </div>
+    `;
+
+    container.appendChild(div);
+  });
+
+  // Total section
+  const totalDiv = document.createElement('div');
+  totalDiv.className = 'pt-3 text-right font-semibold text-indigo-600';
+  totalDiv.innerText = `Total: $${total.toFixed(2)}`;
+  container.appendChild(totalDiv);
+}
+
+// Toggle dropdown
+document.getElementById('cart-icon').addEventListener('click', () => {
+  document.getElementById('cart-dropdown').classList.toggle('hidden');
+});
+
+updateCartUI();
+
+
+function proceedToCheckout() {
+  if (!isUserLoggedIn()) return showSignupPrompt();
+
+  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  if (!cart.length) return alert("Your cart is empty.");
+
+  // ✅ Go to the checkout page
+  window.location.href = "./checkout";
+}
+
+
+function changeQuantity(index, delta) {
+  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  if (cart[index]) {
+    cart[index].quantity += delta;
+    if (cart[index].quantity <= 0) {
+      cart.splice(index, 1);
+    }
+    localStorage.setItem("cart", JSON.stringify(cart));
+    updateCartUI();
+  }
+}
+
+function removeCartItem(index) {
+  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  cart.splice(index, 1);
+  localStorage.setItem("cart", JSON.stringify(cart));
+  updateCartUI();
+}
+
+function closeCartDropdown() {
+  const dropdown = document.getElementById('cart-dropdown');
+  if (!dropdown.classList.contains('hidden')) {
+    dropdown.classList.add('hidden');
+  }
+}
+// Close cart dropdown on scroll
+window.addEventListener('scroll', () => {
+  closeCartDropdown();
+});
+
+
+<!-- Add these functions at the end of your <script> -->
+function isUserLoggedIn() {
+  return !!localStorage.getItem('token');
+}
+
+function showSignupPrompt() {
+  const modal = document.getElementById('signupPrompt');
+  if (!modal) {
+    // Create modal dynamically if not exists
+    const promptHTML = `
+      <div id="signupPrompt" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-[350px] text-center">
+          <h3 class="text-xl font-semibold mb-4">Please Sign Up or Log In</h3>
+          <p class="mb-4 text-gray-600">You need to be logged in to add products or place orders.</p>
+          <a href="signup.html" class="inline-block bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700 transition">Go to Sign Up</a>
+          <button onclick="hideSignupPrompt()" class="block text-sm text-gray-500 mt-4 hover:underline">Cancel</button>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', promptHTML);
+  } else {
+    modal.classList.remove('hidden');
+  }
+}
+
+function hideSignupPrompt() {
+  const modal = document.getElementById('signupPrompt');
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+}
+</script>
+
+
+
+</body>
+</html>

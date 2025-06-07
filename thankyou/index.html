@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Thank You | ShoeVerse</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-600 min-h-screen flex flex-col items-center justify-center text-white font-sans px-6">
+
+  <div class="bg-white bg-opacity-10 backdrop-blur-md rounded-xl shadow-lg max-w-4xl w-full p-8">
+    <h1 class="text-4xl font-extrabold mb-6 text-center">Thank You for Your Order! 🎉</h1>
+
+    <p class="text-center mb-8 text-lg">Here's a summary of your purchase:</p>
+
+    <div id="order-summary" class="space-y-4 max-h-72 overflow-y-auto mb-6">
+      <!-- Products will be shown here -->
+    </div>
+
+    <div class="mb-8">
+      <p class="mb-2 text-center font-semibold text-lg">Redirecting to your dashboard in <span id="countdown">10</span> seconds...</p>
+      <div class="w-full bg-white bg-opacity-30 rounded-full h-4 overflow-hidden">
+        <div id="progress-bar" class="bg-white h-4 rounded-full transition-all duration-1000 ease-linear"></div>
+      </div>
+    </div>
+
+    <div class="flex justify-center">
+      <button id="go-dashboard" class="bg-white text-indigo-700 font-bold py-3 px-8 rounded-full shadow-lg hover:bg-indigo-100 transition">
+        Go to Dashboard Now
+      </button>
+    </div>
+  </div>
+
+<script>
+  const summary = JSON.parse(localStorage.getItem("lastOrderSummary") || "null");
+  const container = document.getElementById("order-summary");
+  const totalPaidElem = document.getElementById("total-paid");
+
+  if (!summary || !summary.items || summary.items.length === 0) {
+    container.innerHTML = '<p class="text-center text-white/80 italic">No order data found.</p>';
+  } else {
+    let subtotal = 0;
+
+    summary.items.forEach(item => {
+      const image = item.image || '';
+      const name = item.name || 'Product';
+      const quantity = item.quantity || 1;
+      const itemPrice = item.price || 0;
+      const itemTotal = itemPrice * quantity;
+      subtotal += itemTotal;
+
+      const div = document.createElement('div');
+      div.className = 'flex gap-4 items-center bg-white bg-opacity-20 rounded-lg p-4 shadow-md';
+      div.innerHTML = `
+        <img src="${image}" alt="${name}" class="w-24 h-24 object-contain rounded-md border border-white/40" />
+        <div class="flex-1">
+          <p class="font-semibold text-lg">${name}</p>
+          <p class="text-sm">Size: ${item.size || '-'}, Color: ${item.color || '-'}</p>
+          <p class="mt-1 font-semibold">$${itemPrice} × ${quantity} = $${itemTotal.toFixed(2)}</p>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+
+    const discount = summary.discount || 0;
+    const shippingFee = summary.shippingFee || 0;
+    const finalAmount = subtotal - discount + shippingFee;
+
+    // Add Summary Table
+    const summaryHTML = `
+      <div class="bg-white bg-opacity-20 rounded-lg p-4 mt-6 space-y-2">
+        <p><strong>Subtotal:</strong> $${subtotal.toFixed(2)}</p>
+        <p><strong>Shipping Fee:</strong> $${shippingFee.toFixed(2)}</p>
+        <p><strong>Discount:</strong> -$${discount.toFixed(2)}</p>
+        <hr class="border-white/30 my-2">
+        <p class="font-bold text-lg"><strong>Total Paid:</strong> $${finalAmount.toFixed(2)}</p>
+      </div>
+    `;
+    container.insertAdjacentHTML('afterend', summaryHTML);
+
+    // Coupon Info
+    if (summary.coupon && summary.coupon !== '') {
+      const couponHTML = `
+        <div class="mt-4 text-center">
+          <p class="text-green-300 font-semibold">🎟️ Coupon Applied: <span class="text-white">${summary.coupon}</span></p>
+        </div>
+      `;
+      container.insertAdjacentHTML('afterend', couponHTML);
+    }
+  }
+
+  // Countdown and progress bar
+  const countdownElem = document.getElementById("countdown");
+  const progressBar = document.getElementById("progress-bar");
+  let seconds = 10;
+
+  function updateCountdown() {
+    seconds--;
+    if (seconds < 0) {
+      window.location.href = "../dashboard";
+      return;
+    }
+    countdownElem.textContent = seconds;
+    progressBar.style.width = (seconds / 50) * 100 + "%";
+  }
+
+  progressBar.style.width = "100%";
+  const intervalId = setInterval(updateCountdown, 1000);
+
+  document.getElementById("go-dashboard").addEventListener("click", () => {
+    clearInterval(intervalId);
+    window.location.href = "../dashboard";
+  });
+
+  // OPTIONAL: clear summary after use
+  setTimeout(() => {
+    localStorage.removeItem("lastOrderSummary");
+  }, 20000);
+</script>
+
+</body>
+</html>

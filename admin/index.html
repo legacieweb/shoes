@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+<!-- 🔐 Login Modal -->
+<div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-xl p-6 w-96 space-y-4">
+    <h2 class="text-xl font-semibold text-center text-blue-700">Admin Login</h2>
+    <input type="email" id="adminEmail" placeholder="Email" class="w-full p-3 bg-gray-100 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+    <input type="password" id="adminPassword" placeholder="Password" class="w-full p-3 bg-gray-100 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+    <button onclick="adminLogin()" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Login</button>
+    <p id="loginStatus" class="text-center text-sm text-red-500"></p>
+  </div>
+</div>
+
+<div class="flex min-h-screen">
+  <!-- Sidebar -->
+  <aside id="sidebar" class="bg-white shadow-md p-6 w-64 space-y-4 fixed lg:relative z-40 top-0 left-0 h-screen transform -translate-x-full lg:translate-x-0 transition duration-300 ease-in-out">
+    <h1 class="text-2xl font-bold text-blue-700 mb-6">Admin Panel</h1>
+    <nav class="space-y-2">
+      <button onclick="handleNav('analytics')" class="w-full text-left px-4 py-2 rounded hover:bg-blue-50">📊 Analytics</button>
+      <button onclick="handleNav('orders')" class="w-full text-left px-4 py-2 rounded hover:bg-blue-50">📦 Orders</button>
+      <button onclick="handleNav('coupons')" class="w-full text-left px-4 py-2 rounded hover:bg-blue-50">🏷️ Coupons</button>
+      <button onclick="handleNav('users')" class="w-full text-left px-4 py-2 rounded hover:bg-blue-50">👥 Users</button>
+      <button onclick="window.location.href='https://shoes.iyonicorp.com'" class="w-full text-left px-4 py-2 rounded hover:bg-green-50 text-green-700 font-semibold">🛒 Shop</button>
+      <button onclick="logoutAdmin()" class="w-full text-left px-4 py-2 rounded hover:bg-red-50 text-red-600 font-semibold">🚪 Logout</button>
+    </nav>
+  </aside>
+
+  <!-- Header for mobile -->
+  <header class="w-full lg:hidden fixed top-0 left-0 z-50 bg-white shadow flex items-center justify-between px-4 py-3">
+    <h1 class="text-xl font-bold text-blue-700">Admin Panel</h1>
+    <button onclick="toggleSidebar()" class="bg-white p-2 rounded shadow">
+      <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 px-4 py-6 w-full mt-16 lg:mt-0 lg:ml-64 max-w-7xl mx-auto space-y-10">
+    
+    <!-- Analytics Section -->
+    <section id="analytics">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-3xl font-bold text-gray-800">📊 Analytics</h2>
+        <select id="orderTimeFilter" class="bg-gray-100 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" onchange="fetchAdminAnalytics()">
+          <option value="all">All Time</option>
+          <option value="today">Today</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+          <option value="year">This Year</option>
+        </select>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-white rounded-xl p-5 shadow-sm">
+          <p class="text-sm text-gray-500">Total Sales</p>
+          <p class="text-2xl font-bold text-green-600">$<span id="totalRevenue">0</span></p>
+        </div>
+        <div class="bg-white rounded-xl p-5 shadow-sm">
+          <p class="text-sm text-gray-500">Most Bought Product</p>
+          <p class="text-xl font-semibold"><span id="topProduct">-</span></p>
+        </div>
+        <div class="bg-white rounded-xl p-5 shadow-sm">
+          <p class="text-sm text-gray-500">Top Buyer</p>
+          <p class="text-xl font-semibold"><span id="topUser">-</span></p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-6 shadow mt-8">
+        <h3 class="text-xl font-semibold mb-4">🕒 Purchase Timeline</h3>
+        <canvas id="salesChart" class="w-full h-64"></canvas>
+        <p class="text-xs text-gray-400 text-center mt-2">Hover to explore order info</p>
+      </div>
+
+      <div class="bg-white rounded-xl p-6 shadow mt-10">
+        <h3 class="text-xl font-semibold mb-4">📦 Products Sold</h3>
+        <div id="productInventory" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+    </section>
+
+    <!-- Orders Section -->
+    <section id="orders" class="hidden">
+      <h2 class="text-3xl font-bold mb-6">📦 Orders</h2>
+      <div id="statusButtons" class="flex gap-3 mb-4 flex-wrap"></div>
+      <div id="ordersOutput" class="space-y-4"></div>
+    </section>
+
+    <!-- Coupons Section -->
+    <section id="coupons" class="hidden">
+      <h2 class="text-3xl font-bold mb-6">🏷️ Coupons</h2>
+      <div id="couponsOutput" class="space-y-4"></div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
+        <div>
+          <h3 class="font-medium mb-2">Create New Coupon</h3>
+          <input type="text" id="couponCode" placeholder="CODE" class="w-full p-3 bg-gray-100 rounded mb-2" />
+          <input type="number" id="couponAmount" placeholder="Amount" class="w-full p-3 bg-gray-100 rounded mb-2" />
+          <button onclick="createCoupon()" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition">Create</button>
+        </div>
+      </div>
+    </section>
+
+<!-- Users Section -->
+<section id="users" class="hidden">
+  <h2 class="text-3xl font-bold mb-6">👥 Users</h2>
+
+  <!-- 🔍 Search Input -->
+  <div class="mb-6">
+    <input
+      type="text"
+      id="userSearchInput"
+      placeholder="Search by name or email..."
+      class="w-full px-4 py-2 rounded bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      oninput="filterUsers()"
+    />
+  </div>
+
+  <!-- 🔄 Users Output -->
+  <div id="usersOutput" class="space-y-4"></div>
+
+  <!-- 👤 User Details Modal -->
+  <div id="userDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 flex">
+    <div id="userDetailsBox" class="bg-white w-full max-w-3xl p-6 rounded-xl shadow-xl overflow-y-auto max-h-[90vh]">
+      <div id="userDetailsContent"></div>
+      <div class="flex justify-end mt-6">
+        <button onclick="closeUserDetails()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Close</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+  </main>
+</div>
+
+<!-- 💻 JavaScript -->
+<script>
+  let token = '';
+  let allUsers = [];
+
+  function showSection(id) {
+    document.querySelectorAll('main section').forEach(sec => sec.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+
+    switch (id) {
+      case 'orders': fetchOrders(); break;
+      case 'coupons': fetchCoupons(); break;
+      case 'users': fetchUsers(); break;
+      case 'analytics': fetchAdminAnalytics(); break;
+    }
+  }
+
+  async function adminLogin() {
+    const email = document.getElementById('adminEmail').value;
+    const password = document.getElementById('adminPassword').value;
+
+    const res = await fetch('http://localhost:5000/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      token = data.token;
+      document.getElementById('loginModal').classList.add('hidden');
+      fetchAdminAnalytics();
+
+      // Auto logout in 2 hours
+      setTimeout(logoutAdmin, 2 * 60 * 60 * 1000);
+      localStorage.setItem('adminToken', token);
+      localStorage.setItem('adminTokenExpiry', Date.now() + 2 * 60 * 60 * 1000);
+    } else {
+      document.getElementById('loginStatus').textContent = data.message;
+    }
+  }
+
+  function logoutAdmin() {
+    token = '';
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminTokenExpiry');
+    document.getElementById('loginModal').classList.remove('hidden');
+    alert('Session expired. You have been logged out.');
+  }
+
+  function handleNav(sectionId) {
+    showSection(sectionId);
+  }
+
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('-translate-x-full');
+  }
+
+  // Restore session if still valid
+  window.addEventListener('DOMContentLoaded', () => {
+    const savedToken = localStorage.getItem('adminToken');
+    const expiry = localStorage.getItem('adminTokenExpiry');
+
+    if (savedToken && expiry && Date.now() < parseInt(expiry)) {
+      token = savedToken;
+      document.getElementById('loginModal').classList.add('hidden');
+      fetchAdminAnalytics();
+
+      const remaining = parseInt(expiry) - Date.now();
+      setTimeout(logoutAdmin, remaining);
+    }
+  });
+async function fetchOrders() {
+  try {
+    const res = await fetch('http://localhost:5000/api/admin/orders', {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+
+    const contentType = res.headers.get("content-type");
+    if (!res.ok || !contentType.includes("application/json")) {
+      throw new Error(await res.text());
+    }
+
+    const orders = await res.json();
+    const container = document.getElementById('ordersOutput');
+    const tabs = document.getElementById('statusButtons');
+    container.innerHTML = '';
+    tabs.innerHTML = '';
+
+    // Count status occurrences
+    const statusCounts = orders.reduce((acc, o) => {
+      acc[o.status] = (acc[o.status] || 0) + 1;
+      return acc;
+    }, {});
+
+    const allStatuses = ['All', 'Pending', 'Confirmed', 'Ready for Shipping', 'Shipped', 'Delivered', 'Cancelled'];
+
+    // Create filter buttons
+    allStatuses.forEach(status => {
+      const count = status === 'All'
+        ? orders.length
+        : statusCounts[status] || 0;
+
+      const btn = document.createElement('button');
+      btn.textContent = `${status} (${count})`;
+      btn.className = 'px-3 py-1 rounded-full border text-sm hover:bg-blue-100';
+      btn.onclick = () => renderOrders(status === 'All' ? orders : orders.filter(o => o.status === status));
+      tabs.appendChild(btn);
+    });
+
+    // Render default view
+    renderOrders(orders);
+
+  } catch (err) {
+    console.error("Fetch Orders Error:", err);
+    document.getElementById('ordersOutput').innerHTML = `<p class="text-red-500">Failed to load orders.</p>`;
+  }
+}
+function renderOrders(orderList) {
+  const container = document.getElementById('ordersOutput');
+  container.innerHTML = '';
+
+  if (!orderList.length) {
+    container.innerHTML = `<p class="text-gray-500 italic">No orders found for this status.</p>`;
+    return;
+  }
+
+  orderList.forEach(order => {
+    const div = document.createElement('div');
+    div.className = 'bg-white p-4 rounded shadow space-y-3';
+
+    const itemsHTML = order.items.map(item => {
+      const name = item.name || 'Product';
+      const price = item.price || 0;
+      const quantity = item.quantity || 1;
+      const size = item.size || 'N/A';
+      const color = item.color || 'N/A';
+      const image = item.image
+        ? `<img src="${item.image}" class="w-20 h-20 object-contain rounded border mb-2" alt="${name}" />`
+        : '';
+
+      return `
+        <div class="flex gap-4 mb-4 border-b pb-3">
+          ${image}
+          <div>
+            <p class="font-semibold">${name}</p>
+            <p class="text-sm text-gray-600">Size: ${size}, Color: ${color}</p>
+            <p class="text-sm text-gray-700">Quantity: ${quantity} × $${price.toFixed(2)}</p>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const addr = order.deliveryAddress || {};
+    const delivery = `
+      <p><strong>Recipient:</strong> ${addr.name || '-'}</p>
+      <p><strong>Phone:</strong> ${addr.phone || '-'}</p>
+      <p><strong>Email:</strong> ${addr.email || '-'}</p>
+      <p><strong>Address:</strong> ${addr.address || '-'}, ${addr.city || '-'}, ${addr.state || '-'}, ${addr.zip || '-'}</p>
+      <p><strong>Country:</strong> ${addr.country || '-'}</p>
+    `;
+
+    const statusOptions = ['Pending', 'Confirmed', 'Ready for Shipping', 'Shipped', 'Delivered', 'Cancelled']
+      .map(opt => `<option value="${opt}" ${order.status === opt ? 'selected' : ''}>${opt}</option>`)
+      .join('');
+
+    const statusDropdown = `
+      <label class="block text-sm font-medium text-gray-700 mb-1">Update Status:</label>
+      <select class="border px-2 py-1 rounded" onchange="updateOrderStatus('${order.id}', this.value)">
+        ${statusOptions}
+      </select>
+    `;
+
+    const couponHTML = order.coupon
+      ? `<p class="mb-1 text-sm text-green-700">🎟️ Coupon Applied: <strong>${order.coupon}</strong></p>`
+      : '';
+
+    const discountHTML = order.discount > 0
+      ? `<p class="mb-1 text-sm text-red-500">💸 Discount: −$${order.discount.toFixed(2)}</p>`
+      : '';
+
+    const shippingHTML = order.shippingFee > 0
+      ? `<p class="mb-1 text-sm text-blue-600">🚚 Shipping Fee: $${order.shippingFee.toFixed(2)}</p>`
+      : '';
+
+    const totalPrice = order.totalPrice?.toFixed(2) || '0.00';
+
+    const paymentRefHTML = order.paymentRef
+      ? `<p class="text-sm text-gray-500">💳 Paystack Ref: <code>${order.paymentRef}</code></p>`
+      : '';
+
+    div.innerHTML = `
+      <p class="mb-2"><strong>User:</strong> ${order.user.name} (${order.user.email})</p>
+      ${delivery}
+      ${statusDropdown}
+      ${couponHTML}
+      ${discountHTML}
+      ${shippingHTML}
+      <p class="mb-2"><strong>Total Paid:</strong> $${totalPrice}</p>
+      ${paymentRefHTML}
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">${itemsHTML}</div>
+      <p class="mt-3 text-sm text-gray-500">🕒 Ordered on: ${new Date(order.createdAt).toLocaleString()}</p>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+async function updateOrderStatus(orderId, newStatus) {
+  try {
+    const res = await fetch(`http://localhost:5000/api/admin/orders/${orderId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ status: newStatus })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      alert("✅ Order status updated");
+      fetchOrders(); // Refresh orders
+    } else {
+      alert("⚠️ Failed to update status: " + data.message);
+    }
+  } catch (err) {
+    console.error("Update Error:", err);
+    alert("❌ Server error while updating status.");
+  }
+}
+
+    async function fetchCoupons() {
+      const res = await fetch('http://localhost:5000/api/admin/coupons', {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      const coupons = await res.json();
+      const container = document.getElementById('couponsOutput');
+      container.innerHTML = '';
+
+      coupons.forEach(coupon => {
+        const div = document.createElement('div');
+        div.className = 'bg-white p-4 rounded shadow flex justify-between items-center';
+        div.innerHTML = `
+          <div>
+            <p><strong>Code:</strong> ${coupon.code}</p>
+            <p><strong>Amount:</strong> $${coupon.amount}</p>
+          </div>
+          <button onclick="deleteCoupon('${coupon._id}')" class="text-red-500 hover:underline">Delete</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function createCoupon() {
+      const code = document.getElementById('couponCode').value;
+      const amount = parseFloat(document.getElementById('couponAmount').value);
+
+      const res = await fetch('http://localhost:5000/api/admin/coupons', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token
+        },
+        body: JSON.stringify({ code, amount })
+      });
+
+      const data = await res.json();
+      alert(data.message || 'Coupon created');
+      fetchCoupons();
+    }
+
+    async function deleteCoupon(id) {
+      const res = await fetch(`http://localhost:5000/api/admin/coupons/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: 'Bearer ' + token }
+      });
+
+      const data = await res.json();
+      alert(data.message || 'Deleted');
+      fetchCoupons();
+    }
+async function fetchUsers() {
+  const res = await fetch('http://localhost:5000/api/admin/users', {
+    headers: { Authorization: 'Bearer ' + token }
+  });
+  const users = await res.json();
+  allUsers = users; // Store users globally for filtering
+
+  const container = document.getElementById('usersOutput');
+  container.innerHTML = '';
+
+  users.forEach(user => {
+    const div = document.createElement('div');
+    div.className = 'bg-white p-4 rounded shadow space-y-2';
+    div.innerHTML = `
+      <p><strong>Name:</strong> ${user.name}</p>
+      <p><strong>Email:</strong> ${user.email}</p>
+      <button onclick="showUserDetails('${user._id}')" class="mt-2 bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition">View Info</button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+async function showUserDetails(userId) {
+  const res = await fetch(`http://localhost:5000/api/admin/users/${userId}/details`, {
+    headers: { Authorization: 'Bearer ' + token }
+  });
+
+  const data = await res.json();
+  const { user, orders, totalSpent } = data;
+  const modal = document.getElementById('userDetailsModal');
+  const content = document.getElementById('userDetailsContent');
+
+  let ordersHTML = orders.map(order => {
+    const images = order.items.map(i =>
+      `<div class="flex flex-col items-center text-center">
+        <img src="${i.image}" class="w-20 h-20 object-cover rounded border shadow-sm" title="${i.name}" />
+        <p class="text-xs mt-1 text-gray-500 truncate w-20">${i.name}</p>
+      </div>`
+    ).join('');
+
+    return `
+      <div class="border rounded-lg p-4 bg-gray-50 shadow-sm mb-4">
+        <p class="text-sm text-gray-500 mb-1">🕒 ${new Date(order.createdAt).toLocaleString()}</p>
+        <p class="text-sm font-semibold text-gray-700 mb-2">Total: $${order.totalPrice?.toFixed(2)}</p>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-items-center">
+          ${images}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  content.innerHTML = `
+    <h2 class="text-xl font-bold mb-2">👤 ${user.name}</h2>
+    <p><strong>Email:</strong> ${user.email}</p>
+    <p class="mt-2 font-semibold text-green-600">💰 Total Spent: $${totalSpent.toFixed(2)}</p>
+    <div class="mt-4">
+      <h3 class="text-lg font-semibold mb-2">📦 Orders (${orders.length})</h3>
+      ${ordersHTML || `<p class="text-sm text-gray-500 italic">No orders yet.</p>`}
+    </div>
+  `;
+
+  modal.classList.remove('hidden');
+
+  // ✅ Close on outside click
+  function outsideClickListener(e) {
+    const box = document.getElementById("userDetailsBox");
+    if (!box.contains(e.target)) {
+      closeUserDetails();
+    }
+  }
+
+  // Attach once
+  setTimeout(() => {
+    document.addEventListener('click', outsideClickListener);
+    modal.dataset.listenerAttached = 'true';
+  }, 0);
+
+  // Store the cleanup function
+  modal.dataset.cleanup = () => document.removeEventListener('click', outsideClickListener);
+}
+
+function closeUserDetails() {
+  const modal = document.getElementById('userDetailsModal');
+  modal.classList.add('hidden');
+
+  // Remove event listener if it exists
+  if (modal.dataset.cleanup) {
+    const cleanup = modal.dataset.cleanup;
+    if (typeof cleanup === 'function') cleanup();
+    else eval(cleanup); // fallback in case it's a stringified function
+    delete modal.dataset.cleanup;
+  }
+}
+
+    let productStock = {
+  "CloudStep Pro": 20,
+  "Retro Runner X": 15,
+  "Brave Trail Boots": 12,
+  "Perfect Pump": 30,
+  "Summer Slide": 10,
+  "Weekend Wedge": 25,
+  "Highline Stiletto": 30,
+  "Air Zoom Alpha": 18,
+  "Sunny Day Sandal": 22,
+  "Cozy Home Slipper": 50,
+  "Urban Explorer Boot": 14,
+  "Glam Night Heel": 5,
+  "Windy Wedge": 16,
+  "Glamour Up Sandal": 9,
+  "Selena Block Pump": 11,
+  "Velocity Runner": 17,
+  "Crystal Chic Heel": 6,
+  "Breeze Comfort Sandal": 13,
+  "Mountain Trek Boot": 7,
+  "Urban Slide": 19,
+"Sunset Wedge": 21,
+"Classic Pointed Pump": 23,
+"Plush Dream Slipper": 24,
+"Street Flex Sneaker": 28,
+"Velvet Touch Heel": 22,
+"Chelsea Classic Boot": 3,
+"Urban Strap Sandal": 2,
+"Comfy Foam Slide": 11,
+"Tropical Wedge": 9,
+"Evening Shine Pump": 8,
+"Winter Warm Slipper": 6,
+"Urban Pulse Sneaker": 10,
+"Midnight Velvet Heel": 5,
+"Ridge Walker Boot": 12,
+"Seaside Strap Sandal": 14
+};
+
+function updateProductInventory(productName) {
+  const newQty = prompt(`Enter new inventory for "${productName}"`, productStock[productName] || 0);
+  const parsed = parseInt(newQty);
+  if (!isNaN(parsed) && parsed >= 0) {
+    productStock[productName] = parsed;
+    alert(`✅ Inventory for "${productName}" updated to ${parsed}`);
+    fetchAdminAnalytics();
+  } else {
+    alert("⚠️ Invalid quantity.");
+  }
+}
+
+async function fetchAdminAnalytics() {
+  try {
+    const res = await fetch('http://localhost:5000/api/admin/orders', {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+
+    const orders = await res.json();
+    if (!Array.isArray(orders)) throw new Error("Invalid orders data");
+
+    const filter = document.getElementById('orderTimeFilter')?.value || 'all';
+    const now = new Date();
+
+    const filteredOrders = orders.filter(order => {
+      const date = new Date(order.createdAt);
+      if (filter === 'today') return date.toDateString() === now.toDateString();
+      if (filter === 'week') {
+        const weekStart = new Date(now); weekStart.setDate(now.getDate() - 7);
+        return date >= weekStart && date <= now;
+      }
+      if (filter === 'month') return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+      if (filter === 'year') return date.getFullYear() === now.getFullYear();
+      return true;
+    });
+
+    let totalSales = 0;
+    const productCount = {};
+    const userSpend = {};
+    const chartLabels = [];
+    const chartData = [];
+    const chartInfo = [];
+
+    filteredOrders.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+    filteredOrders.forEach(order => {
+      const price = order.totalPrice || 0;
+      totalSales += price;
+
+      const userEmail = order.user?.email || 'Unknown';
+      userSpend[userEmail] = (userSpend[userEmail] || 0) + price;
+
+      order.items.forEach(item => {
+        const itemName = item.name || 'Unnamed Product';
+        const qty = parseInt(item.quantity) || 1;
+        productCount[itemName] = (productCount[itemName] || 0) + qty;
+      });
+
+      const time = new Date(order.createdAt).toLocaleString('en-US', {
+        weekday: 'short', hour: '2-digit', minute: '2-digit'
+      });
+
+      chartLabels.push(time);
+      chartData.push(price);
+      chartInfo.push({
+        name: order.items?.[0]?.name || 'Product',
+        image: order.items?.[0]?.image || '',
+        price
+      });
+    });
+
+    const mostBought = Object.entries(productCount).sort((a, b) => b[1] - a[1])[0];
+    const topUser = Object.entries(userSpend).sort((a, b) => b[1] - a[1])[0];
+
+    document.getElementById('totalRevenue').textContent = totalSales.toFixed(2);
+    document.getElementById('topProduct').textContent = mostBought ? `${mostBought[0]} (${mostBought[1]})` : '-';
+    document.getElementById('topUser').textContent = topUser ? `${topUser[0]} ($${topUser[1].toFixed(2)})` : '-';
+
+    // 🧮 Inventory with stock and sold quantity
+    const productInventory = {};
+    orders.forEach(order => {
+      order.items.forEach(item => {
+        const name = item.name || 'Unnamed Product';
+        const qty = parseInt(item.quantity) || 0;
+        if (!productInventory[name]) {
+          productInventory[name] = { quantity: 0, image: item.image || '' };
+        }
+        productInventory[name].quantity += qty;
+      });
+    });
+
+    const inventoryContainer = document.getElementById('productInventory');
+    inventoryContainer.innerHTML = '';
+
+    Object.entries(productInventory).forEach(([name, data]) => {
+      const sold = data.quantity;
+      const stock = productStock[name] ?? 0;
+      const remaining = stock - sold;
+
+      const badge = remaining <= 5
+        ? `<span class="ml-2 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded">Low</span>`
+        : '';
+
+      const img = data.image
+        ? `<img src="${data.image}" class="w-16 h-16 object-contain border rounded" alt="${name}" />`
+        : `<div class="w-16 h-16 bg-gray-200 rounded flex items-center justify-center text-gray-500">No Image</div>`;
+
+      const div = document.createElement('div');
+      div.className = 'flex justify-between items-center gap-4 p-4 bg-white rounded border shadow-sm';
+
+      div.innerHTML = `
+        <div class="flex gap-4 items-center">
+          ${img}
+          <div>
+            <p class="font-semibold">${name}</p>
+            <p class="text-sm text-gray-600">Sold: <strong>${sold}</strong></p>
+            <p class="text-sm text-indigo-700">Inventory Left: <strong>${remaining}</strong> ${badge}</p>
+          </div>
+        </div>
+      `;
+      inventoryContainer.appendChild(div);
+    });
+
+    // 📈 Render Chart.js bar chart
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    if (window.analyticsChart) window.analyticsChart.destroy();
+    window.analyticsChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: chartLabels,
+        datasets: [{
+          label: '🛍️ Orders ($)',
+          data: chartData,
+          backgroundColor: 'rgba(79, 70, 229, 0.6)',
+          borderColor: '#4f46e5',
+          borderWidth: 1,
+          hoverOffset: 10
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                const i = context.dataIndex;
+                const info = chartInfo[i];
+                return `${info.name}: $${info.price}`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: 'Amount ($)' } },
+          x: { title: { display: true, text: 'Time' } }
+        }
+      }
+    });
+
+  } catch (err) {
+    console.error("Analytics Error:", err);
+    alert("❌ Failed to load analytics.");
+  }
+}
+
+    // Sidebar navigation handler
+    function handleNav(sectionId) {
+      showSection(sectionId);
+      // Hide sidebar on mobile after navigation
+      const sidebar = document.getElementById('sidebar');
+      if (window.innerWidth < 1024) {
+        sidebar.classList.add('-translate-x-full');
+      }
+    }
+
+    // Hamburger menu toggle for sidebar
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('-translate-x-full');
+    }
+
+     // Render filtered or full user list
+  function renderUsers(users) {
+    const container = document.getElementById("usersOutput");
+    container.innerHTML = "";
+
+    if (!users.length) {
+      container.innerHTML = `<p class="text-gray-500">No matching users found.</p>`;
+      return;
+    }
+
+    users.forEach(user => {
+      const div = document.createElement("div");
+      div.className = "bg-white rounded-xl p-4 shadow hover:shadow-md transition";
+      div.innerHTML = `
+        <p><strong>${user.name}</strong> (${user.email})</p>
+        <p class="text-sm text-gray-500">Joined: ${new Date(user.createdAt).toLocaleDateString()}</p>
+        <button onclick="viewUserDetails('${user._id}')" class="mt-2 text-blue-600 hover:underline text-sm">View Details</button>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  // Live filter users as you type
+  function filterUsers() {
+    const term = document.getElementById("userSearchInput").value.toLowerCase();
+    const filtered = allUsers.filter(user =>
+      user.name.toLowerCase().includes(term) ||
+      user.email.toLowerCase().includes(term)
+    );
+    renderUsers(filtered);
+  }
+
+  </script>
+
+  
+</body>
+</html>
