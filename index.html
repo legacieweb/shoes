@@ -100,7 +100,7 @@
 
     menu.innerHTML = loggedIn
       ? `
-        <a href="dashboard.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Dashboard</a>
+        <a href="../dashboard" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Dashboard</a>
         <button onclick="logout()" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</button>
       `
       : `
@@ -340,11 +340,10 @@
           "Ideal for urban exploration and casual wear"
         ],
         images: [
-          "https://grailify.com/rails/active_storage/representations/proxy/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBBOGg5SFE9PSIsImV4cCI6bnVsbCwicHVyIjoiYmxvYl9pZCJ9fQ==--62f1b0d497880369fd325742ac2e719b28533c39/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDRG9MWm05eWJXRjBTU0lJYW5CbkJqb0dSVlE2RW5KbGMybDZaVjkwYjE5bWFYUmJCMmtDc0FScEFuUUNPZ3h4ZFdGc2FYUjVhV009IiwiZXhwIjpudWxsLCJwdXIiOiJ2YXJpYXRpb24ifX0=--a33afcf2561dadd1dd8c8a8ec2ee9b1d76dacbef/A%20Bathing%20Ape%20x%20adidas%20Orketro%20Grailify%20(18).jpg",
-          'https://grailify.com/rails/active_storage/representations/proxy/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBBN2Q5SFE9PSIsImV4cCI6bnVsbCwicHVyIjoiYmxvYl9pZCJ9fQ==--921f166fb0a374a491a463262eb9fb30fc874133/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJYW5CbkJqb0dSVlE2RkhKbGMybDZaVjkwYjE5c2FXMXBkRnNIYVFJZ0Eya0NXQUk9IiwiZXhwIjpudWxsLCJwdXIiOiJ2YXJpYXRpb24ifX0=--b07063de60519c0d803efb6e9d6579b04345a797/A%20Bathing%20Ape%20x%20adidas%20Orketro%20Grailify%20(1).jpg',
-          'https://grailify.com/rails/active_storage/representations/proxy/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBBN2g5SFE9PSIsImV4cCI6bnVsbCwicHVyIjoiYmxvYl9pZCJ9fQ==--41ea651a77e6263ab867f4b1f9ac54ae8ef2dafa/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJYW5CbkJqb0dSVlE2RkhKbGMybDZaVjkwYjE5c2FXMXBkRnNIYVFJZ0Eya0NXQUk9IiwiZXhwIjpudWxsLCJwdXIiOiJ2YXJpYXRpb24ifX0=--b07063de60519c0d803efb6e9d6579b04345a797/A%20Bathing%20Ape%20x%20adidas%20Orketro%20Grailify%20(2).jpg',
-          'https://grailify.com/rails/active_storage/representations/proxy/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBBN3Q5SFE9PSIsImV4cCI6bnVsbCwicHVyIjoiYmxvYl9pZCJ9fQ==--4b44679c9bd3a32524e2164586cbeb1d02564b7b/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJYW5CbkJqb0dSVlE2RkhKbGMybDZaVjkwYjE5c2FXMXBkRnNIYVFJZ0Eya0NXQUk9IiwiZXhwIjpudWxsLCJwdXIiOiJ2YXJpYXRpb24ifX0=--b07063de60519c0d803efb6e9d6579b04345a797/A%20Bathing%20Ape%20x%20adidas%20Orketro%20Grailify%20(5).jpg',
-          'https://grailify.com/rails/active_storage/representations/proxy/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBBOEo5SFE9PSIsImV4cCI6bnVsbCwicHVyIjoiYmxvYl9pZCJ9fQ==--ca0c756ee2acfc927f8413fa38878c65ff93be2b/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJYW5CbkJqb0dSVlE2RkhKbGMybDZaVjkwYjE5c2FXMXBkRnNIYVFJZ0Eya0NXQUk9IiwiZXhwIjpudWxsLCJwdXIiOiJ2YXJpYXRpb24ifX0=--b07063de60519c0d803efb6e9d6579b04345a797/A%20Bathing%20Ape%20x%20adidas%20Orketro%20Grailify%20(12).jpg'
+          "https://cdn.shopify.com/s/files/1/0293/9277/files/12-02-24_S15_11_CASSIDY1_Black_CZ_09-17-206897_ES.jpg?v=1733334775&width=600&height=900&crop=center",
+          'https://cdn.shopify.com/s/files/1/0293/9277/files/12-02-24_S15_11_CASSIDY1_Black_CZ_09-17-296898_ES.jpg?v=1733334775&width=600&height=900&crop=center',
+          'https://cdn.shopify.com/s/files/1/0293/9277/files/12-06-24_S6_5_CASSIDY1_Black_AZ_SS_09-32-37_74803_PXF.jpg?v=1733776522&width=600&height=900&crop=center',
+          'https://cdn.shopify.com/s/files/1/0293/9277/files/12-06-24_S6_5_CASSIDY1_Black_AZ_SS_09-32-57_74808_PXF.jpg?v=1733776521&width=600&height=900&crop=center'
 
         ],
         colors: ["white", "gray"],
@@ -1073,8 +1072,6 @@ products.forEach(product => {
   function openCategory(name) {
     window.location.href = `./category?name=${encodeURIComponent(name)}`;
   }
-
-
 
 
     function updateCartUI() {
