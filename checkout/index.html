@@ -133,7 +133,7 @@ function updateShippingFee() {
 async function checkIfUsedAutomaticDiscount() {
   const token = localStorage.getItem("token");
   try {
-    const res = await fetch("http://localhost:5000/api/auth/me", {
+    const res = await fetch("https://shoes-kzcm.onrender.com/api/auth/me", {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -208,7 +208,7 @@ async function renderCartSummary() {
 function applyAutomaticDiscount() {
   const couponCode = "AUTOMATIC DISCOUNT";
 
-  fetch(`http://localhost:5000/api/coupons/${couponCode}`, {
+  fetch(`https://shoes-kzcm.onrender.com/api/coupons/${couponCode}`, {
     headers: {
       Authorization: `Bearer ${localStorage.getItem("token")}`
     }
@@ -231,7 +231,7 @@ function applyAutomaticDiscount() {
 
 async function markAutomaticDiscountAsUsed() {
   const token = localStorage.getItem("token");
-  await fetch('http://localhost:5000/api/auth/mark-automatic-discount-used', {
+  await fetch('https://shoes-kzcm.onrender.com/api/auth/mark-automatic-discount-used', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -244,7 +244,7 @@ function applyCoupon() {
   const code = document.getElementById("coupon-input").value.trim();
   if (!code) return;
 
-  fetch(`http://localhost:5000/api/coupons/${code}`, {
+  fetch(`https://shoes-kzcm.onrender.com/api/coupons/${code}`, {
     headers: {
       Authorization: `Bearer ${localStorage.getItem("token")}`
     }
@@ -309,7 +309,7 @@ document.getElementById("checkout-form").addEventListener("submit", async (e) =>
     amount: totalAmount,
     currency: "USD",
     callback: function (response) {
-      fetch('http://localhost:5000/api/orders', {
+      fetch('https://shoes-kzcm.onrender.com/api/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -357,7 +357,7 @@ document.getElementById("checkout-form").addEventListener("submit", async (e) =>
 });
 
 function autofillUser() {
-  fetch("http://localhost:5000/api/auth/me", {
+  fetch("https://shoes-kzcm.onrender.com/api/auth/me", {
     headers: {
       Authorization: `Bearer ${localStorage.getItem("token")}`
     }

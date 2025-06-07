@@ -549,7 +549,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
     await user.save();
 
     // Create reset URL
-    const resetUrl = `http://localhost:5000/resetpassword/?token=${resetToken}`;
+    const resetUrl = `https://shoes-kzcm.onrender.com/resetpassword/?token=${resetToken}`;
 
     // Send email (basic example)
     const transporter = nodemailer.createTransport({
