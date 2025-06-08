@@ -14,12 +14,25 @@
 <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
   <div class="bg-white rounded-xl shadow-xl p-6 w-96 space-y-4">
     <h2 class="text-xl font-semibold text-center text-blue-700">Admin Login</h2>
-    <input type="email" id="adminEmail" placeholder="Email" class="w-full p-3 bg-gray-100 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
-    <input type="password" id="adminPassword" placeholder="Password" class="w-full p-3 bg-gray-100 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
-    <button onclick="adminLogin()" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Login</button>
-    <p id="loginStatus" class="text-center text-sm text-red-500"></p>
+
+    <form id="admin-login-form" class="space-y-4">
+      <input type="email" id="adminEmail" placeholder="Email" required
+        class="w-full p-3 bg-gray-100 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+      <input type="password" id="adminPassword" placeholder="Password" required
+        class="w-full p-3 bg-gray-100 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+      <button type="submit"
+        id="login-btn"
+        class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">
+        Login
+      </button>
+
+      <p id="loginStatus" class="text-center text-sm text-red-500"></p>
+    </form>
   </div>
 </div>
+
 
 <div class="flex min-h-screen">
   <!-- Sidebar -->
@@ -157,62 +170,75 @@
     }
   }
 
-  async function adminLogin() {
-    const email = document.getElementById('adminEmail').value;
-    const password = document.getElementById('adminPassword').value;
+document.getElementById('admin-login-form').addEventListener('submit', async function (e) {
+  e.preventDefault();
 
-    const res = await fetch('https://shoes-kzcm.onrender.com/api/admin/login', {
+  const button = document.getElementById('login-btn');
+  const originalText = button.textContent;
+
+  // Prevent double-click or resubmit
+  button.disabled = true;
+  button.textContent = 'Logging in...';
+
+  const email = document.getElementById('adminEmail').value.trim();
+  const password = document.getElementById('adminPassword').value;
+
+  try {
+    const res = await fetch('https://shoes-kzcm.onrender.com/api/admin/login',  {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
 
     const data = await res.json();
+
     if (res.ok) {
       token = data.token;
+      localStorage.setItem('adminToken', token);
+      localStorage.setItem('adminTokenExpiry', Date.now() + 2 * 60 * 60 * 1000); // 2 hours
+
       document.getElementById('loginModal').classList.add('hidden');
       fetchAdminAnalytics();
 
       // Auto logout in 2 hours
       setTimeout(logoutAdmin, 2 * 60 * 60 * 1000);
-      localStorage.setItem('adminToken', token);
-      localStorage.setItem('adminTokenExpiry', Date.now() + 2 * 60 * 60 * 1000);
     } else {
-      document.getElementById('loginStatus').textContent = data.message;
+      document.getElementById('loginStatus').textContent = data.message || 'Invalid credentials';
     }
+  } catch (err) {
+    console.error("Login Error:", err);
+    document.getElementById('loginStatus').textContent = 'Something went wrong.';
+  } finally {
+    // Re-enable button and restore text
+    button.disabled = false;
+    button.textContent = originalText;
   }
+});
 
-  function logoutAdmin() {
-    token = '';
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminTokenExpiry');
-    document.getElementById('loginModal').classList.remove('hidden');
-    alert('Session expired. You have been logged out.');
+function logoutAdmin() {
+  token = '';
+  localStorage.removeItem('adminToken');
+  localStorage.removeItem('adminTokenExpiry');
+  alert('Session expired. You have been logged out.');
+  document.getElementById('loginModal').classList.remove('hidden');
+}
+
+// Restore session on load
+window.addEventListener('DOMContentLoaded', () => {
+  const savedToken = localStorage.getItem('adminToken');
+  const expiry = localStorage.getItem('adminTokenExpiry');
+
+  if (savedToken && expiry && Date.now() < parseInt(expiry)) {
+    token = savedToken;
+    document.getElementById('loginModal').classList.add('hidden');
+    fetchAdminAnalytics();
+
+    const remaining = parseInt(expiry) - Date.now();
+    setTimeout(logoutAdmin, remaining);
   }
+});
 
-  function handleNav(sectionId) {
-    showSection(sectionId);
-  }
 
-  function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('-translate-x-full');
-  }
-
-  // Restore session if still valid
-  window.addEventListener('DOMContentLoaded', () => {
-    const savedToken = localStorage.getItem('adminToken');
-    const expiry = localStorage.getItem('adminTokenExpiry');
-
-    if (savedToken && expiry && Date.now() < parseInt(expiry)) {
-      token = savedToken;
-      document.getElementById('loginModal').classList.add('hidden');
-      fetchAdminAnalytics();
-
-      const remaining = parseInt(expiry) - Date.now();
-      setTimeout(logoutAdmin, remaining);
-    }
-  });
 async function fetchOrders() {
   try {
     const res = await fetch('https://shoes-kzcm.onrender.com/api/admin/orders', {
@@ -751,8 +777,7 @@ async function fetchAdminAnalytics() {
       div.className = "bg-white rounded-xl p-4 shadow hover:shadow-md transition";
       div.innerHTML = `
         <p><strong>${user.name}</strong> (${user.email})</p>
-        <p class="text-sm text-gray-500">Joined: ${new Date(user.createdAt).toLocaleDateString()}</p>
-        <button onclick="viewUserDetails('${user._id}')" class="mt-2 text-blue-600 hover:underline text-sm">View Details</button>
+        <button onclick="showUserDetails('${user._id}')" class="mt-2 text-blue-600 hover:underline text-sm">View Details</button>
       `;
       container.appendChild(div);
     });
@@ -768,6 +793,15 @@ async function fetchAdminAnalytics() {
     renderUsers(filtered);
   }
 
+
+    function handleNav(sectionId) {
+    showSection(sectionId);
+  }
+
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('-translate-x-full');
+  }
   </script>
 
   
