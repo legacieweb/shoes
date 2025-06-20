@@ -121,8 +121,8 @@
 
 
 
-<!-- Hero Section -->
-<section class="relative overflow-hidden text-white pt-16 h-screen lg:h-[75vh] bg-transparent">
+<!-- Hero Section (Half screen height) -->
+<section class="relative overflow-hidden text-white pt-16 h-[50vh] bg-transparent">
   <!-- Animated Star Particles -->
   <canvas id="starfield" class="absolute inset-0 w-full h-full pointer-events-none z-0"></canvas>
 
@@ -130,7 +130,7 @@
   <img 
     src="https://cdn.shopify.com/s/files/1/0293/9277/products/06-09-21Studio5_RT_11-31-33_22_THOMAS52_Red_0034_RG.jpg?v=1623436892&width=600&height=900&crop=center"
     alt="Center Sneaker"
-    class="absolute inset-0 w-full h-full object-cover object-center pointer-events-none z-0 lg:left-1/2 lg:top-20 lg:w-[36rem] lg:h-auto lg:transform lg:-translate-x-1/2 lg:-translate-y-[20%] lg:rotate-[10deg]"
+    class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 sm:w-60 md:w-72 lg:w-[36rem] h-auto z-0 rotate-[10deg] pointer-events-none"
   />
 
   <!-- Slogan Text -->
@@ -140,33 +140,30 @@
     </p>
   </div>
 
-  <!-- Floating Sneakers (Desktop Only) -->
+  <!-- Floating Sneakers -->
   <img 
     src="https://cdn.shopify.com/s/files/1/0293/9277/files/09-12-23Studio5_CB_LW_10-47-06_16_POLAND02_Black_11960_CM.jpg?v=1694800305&width=600&height=900&crop=center" 
     alt="Sneaker Left" 
-    class="hidden lg:block absolute left-[-3rem] top-20 w-40 lg:w-56 transform rotate-[-20deg] drop-shadow-2xl z-10"
-  >
+    class="block absolute left-[1%] top-4 w-20 sm:w-28 md:w-36 transform rotate-[-20deg] drop-shadow-2xl z-10"
+  />
   <img 
     src="https://cdn.shopify.com/s/files/1/0293/9277/files/07-21-23Studio8_CB_LW_10-04-24_7_AELLA1_Pink_9483_DQ.jpg?v=1690330867&width=600&height=900&crop=center" 
     alt="Sneaker Right" 
-    class="hidden lg:block absolute right-0 top-24 w-44 lg:w-64 transform rotate-[25deg] drop-shadow-2xl z-10"
-  >
-
-  <!-- Additional Floating Sneakers -->
+    class="block absolute right-[2%] top-8 w-24 sm:w-32 md:w-40 transform rotate-[25deg] drop-shadow-2xl z-10"
+  />
   <img 
     src="https://cdn.shopify.com/s/files/1/0293/9277/files/07-02-21Studio5_RT_14-20-04_47_WINDY_Pink_20991_KL.jpg?v=1733879780&width=1000&height=1500&crop=center"
     alt="Sneaker Extra 1" 
-    class="hidden lg:block absolute left-[20%] bottom-10 w-36 transform rotate-[15deg] drop-shadow-lg z-10"
-  >
+    class="block absolute left-[20%] bottom-4 w-20 sm:w-28 md:w-32 transform rotate-[15deg] drop-shadow-lg z-10"
+  />
   <img 
     src="https://cdn.shopify.com/s/files/1/0293/9277/products/Glamour_Up_Heeled_Sandals_-_Nude_DM.jpg?v=1572028746&width=600&height=900&crop=center"
     alt="Sneaker Extra 2"
-    class="hidden lg:block absolute right-[15%] bottom-8 w-32 transform rotate-[-10deg] drop-shadow-lg z-10"
-  >
+    class="block absolute right-[15%] bottom-4 w-20 sm:w-24 md:w-28 transform rotate-[-10deg] drop-shadow-lg z-10"
+  />
 </section>
 
 <script>
-  // Starfield animation for subtle dynamic background stars
   const canvas = document.getElementById('starfield');
   const ctx = canvas.getContext('2d');
   let width, height;
@@ -208,6 +205,7 @@
   window.addEventListener('resize', resize);
   init();
 </script>
+
 <!-- Category Section -->
 <section id="categories" class="py-12 w-full">
   <h2 class="text-3xl font-bold text-center mb-10">Shop by Category</h2>
