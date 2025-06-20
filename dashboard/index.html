@@ -265,7 +265,7 @@ async function fetchOrders() {
   }
 }
   window.addEventListener('DOMContentLoaded', async () => {
-    if (!token) return (window.location.href = 'login.html');
+    if (!token) return (window.location.href = 'https://shoes.iyonicorp.com/login');
 
     try {
       const user = await fetchUserProfile();
@@ -274,7 +274,7 @@ async function fetchOrders() {
       document.getElementById('profile-email').textContent = user.email || 'N/A';
     } catch (err) {
       localStorage.clear();
-      window.location.href = 'login.html';
+      window.location.href = 'https://shoes.iyonicorp.com/login';
     }
   });
 </script>

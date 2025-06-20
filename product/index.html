@@ -193,14 +193,12 @@ function renderProduct() {
 
   selectedSize = product.sizes[0];
   selectedColor = product.colors[0];
-
   const productDetailsHTML = product.details.map(detail => `<li>${detail}</li>`).join("");
 
   document.getElementById("product-section").innerHTML = `
     <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
       <div>
-        <!-- Swiper Main Image (no border or placeholder box) -->
-        <div class="swiper mySwiper2 mb-4 bg-transparent">
+        <div class="swiper mySwiper2 mb-4 bg-transparent relative">
           <div class="swiper-wrapper">
             ${product.images.map(img => `
               <div class="swiper-slide">
@@ -208,9 +206,12 @@ function renderProduct() {
               </div>
             `).join("")}
           </div>
+
+          <!-- Navigation Arrows -->
+          <div class="swiper-button-prev absolute left-0 top-1/2 transform -translate-y-1/2 z-10 text-3xl text-white bg-black bg-opacity-50 rounded-full px-3 py-1 cursor-pointer hover:bg-opacity-70 select-none">&#10094;</div>
+          <div class="swiper-button-next absolute right-0 top-1/2 transform -translate-y-1/2 z-10 text-3xl text-white bg-black bg-opacity-50 rounded-full px-3 py-1 cursor-pointer hover:bg-opacity-70 select-none">&#10095;</div>
         </div>
 
-        <!-- Swiper Thumbnails -->
         <div class="swiper mySwiperThumbs mt-2">
           <div class="swiper-wrapper">
             ${product.images.map(img => `
@@ -222,19 +223,19 @@ function renderProduct() {
         </div>
       </div>
 
-      <!-- Product Details Area -->
       <div class="space-y-6">
         <h2 class="text-4xl font-bold">${product.name}</h2>
         <p class="text-sm text-gray-400">Product ID: <span class="font-mono text-gray-700">${product.id}</span></p>
         <p class="text-gray-600">${product.description}</p>
-        <p class="text-2xl font-semibold text-indigo-600">$${product.price}</p>
+        <p class="text-2xl font-semibold text-indigo-600">Ksh${product.price}</p>
 
         <div>
           <label class="font-semibold block mb-1">Color</label>
           <div class="flex gap-4">
             ${product.colors.map((color, i) => {
               const isSelected = i === 0 ? 'ring-2 ring-indigo-500' : '';
-              return `<span onclick="selectColor('${color}', this)" class="w-8 h-8 rounded-full bg-${color}-600 border-2 border-gray-300 cursor-pointer ${isSelected}"></span>`;
+              const colorClass = colorClasses[color] || 'bg-gray-400';
+              return `<span onclick="selectColor('${color}', this)" class="w-8 h-8 rounded-full ${colorClass} border-2 border-gray-300 cursor-pointer ${isSelected}"></span>`;
             }).join("")}
           </div>
         </div>
@@ -246,7 +247,7 @@ function renderProduct() {
           <div class="grid grid-cols-4 gap-2">
             ${product.sizes.map((size, i) => {
               const isSelected = i === 0 ? 'bg-indigo-100 border-indigo-500' : '';
-              return `<button data-size="${size}" onclick="selectSize(${size}, this)" class="size-option py-2 border rounded ${isSelected}">${size}</button>`;
+              return `<button onclick="selectSize(${size}, this)" class="size-option py-2 border rounded ${isSelected}">${size}</button>`;
             }).join("")}
           </div>
         </div>
@@ -265,38 +266,30 @@ function renderProduct() {
       </div>
     </div>
 
-    <!-- Description -->
     <section class="mt-12 max-w-4xl mx-auto">
       <h3 class="text-2xl font-bold mb-4">Product Details</h3>
-      <ul class="list-disc list-inside space-y-2 text-gray-600">
-        ${productDetailsHTML}
-      </ul>
+      <ul class="list-disc list-inside space-y-2 text-gray-600">${productDetailsHTML}</ul>
     </section>
 
-<!-- Related Products -->
-<section class="mt-16 bg-transparent px-8 py-10 rounded shadow-md">
-  <h3 class="text-2xl font-bold mb-6">Related Products</h3>
-  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-    ${products.filter(p => p.id !== product.id && p.category === product.category).slice(0, 3).map(p => `
-      <div class="rounded-lg overflow-hidden shadow hover:shadow-md transition bg-transparent">
-        <a href="../product?id=${p.id}">
-          <img src="${p.images[0]}" alt="${p.name}" class="w-full h-52 object-contain"/>
-        </a>
-        <div class="p-4">
-          <h4 class="font-semibold">${p.name}</h4>
-          <p class="text-gray-600">$${p.price}</p>
-          <a href="../product?id=${p.id}" class="text-indigo-600 text-sm hover:underline">View Product</a>
-        </div>
-      </div>`).join('')}
-  </div>
-</section>
+    <section class="mt-16 bg-transparent px-8 py-10 rounded shadow-md">
+      <h3 class="text-2xl font-bold mb-6">Related Products</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        ${products.filter(p => p.id !== product.id && p.category === product.category).slice(0, 3).map(p => `
+          <div class="rounded-lg overflow-hidden shadow hover:shadow-md transition bg-transparent">
+            <a href="../product?id=${p.id}">
+              <img src="${p.images[0]}" alt="${p.name}" class="w-full h-52 object-contain"/>
+            </a>
+            <div class="p-4">
+              <h4 class="font-semibold">${p.name}</h4>
+              <p class="text-gray-600">$${p.price}</p>
+              <a href="../product?id=${p.id}" class="text-indigo-600 text-sm hover:underline">View Product</a>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </section>
   `;
-
   initializeSwiper();
-}
-
-function updateMainImage(src) {
-  document.getElementById("mainImage").src = src;
 }
 
 function initializeSwiper() {
@@ -305,15 +298,33 @@ function initializeSwiper() {
     slidesPerView: 3,
     freeMode: true,
     watchSlidesProgress: true,
+    keyboard: {
+      enabled: true,
+      onlyInViewport: true,
+    },
   });
 
   new Swiper(".mySwiper2", {
     spaceBetween: 10,
+    keyboard: {
+      enabled: true,
+      onlyInViewport: true,
+    },
+    navigation: {
+      nextEl: ".swiper-button-next",
+      prevEl: ".swiper-button-prev",
+    },
     thumbs: {
       swiper: thumbs,
     },
   });
 }
+
+
+function updateMainImage(src) {
+  document.getElementById("mainImage").src = src;
+}
+
 function getUserToken() {
   return localStorage.getItem('token');
 }
